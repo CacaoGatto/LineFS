@@ -3,7 +3,7 @@ DPDK_VER := 16.11
 .PHONY: download all clean
 all:
 	#make install -C dpdk-$(DPDK_VER) T=x86_64-native-linuxapp-gcc DESTDIR=dpdk-$(DPDK_VER)/ -j8
-	sudo apt install -y libndctl-dev libdaxctl-dev
+	sudo apt install -y libndctl-dev libdaxctl-dev cmake
 	make -C nvml -j $(nproc)
 	sudo apt install -y build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev ninja-build pkg-config valgrind
 	(cd rdma-core && ./build.sh)
@@ -25,6 +25,7 @@ all:
 
 snic-all:
 	#make -C nvml -j $(nproc)
+	sudo apt install -y cmake
 	(cd rdma-core && ./build.sh)
 	(cd rdma && make)
 	if [ ! -d jemalloc-4.5.0 ]; then tar -xf jemalloc-4.5.0.tar.bz2; fi
@@ -42,15 +43,15 @@ redownload:
 	########
 	# 	NVML
 	########
-	@rm -rf nvml
-	git clone https://github.com/pmem/nvml
-	(cd nvml && git checkout tags/1.7)
+	#@rm -rf nvml
+	#git clone https://github.com/pmem/nvml
+	#(cd nvml && git checkout tags/1.7)
 	########
 	#       syscall_intercept
 	#
-	@rm -rf syscall_intercept
-	git clone https://github.com/pmem/syscall_intercept.git
-	@rm -rf "jemalloc-4.5.0"; tar xf jemalloc-4.5.0.tar.bz2
+	#@rm -rf syscall_intercept
+	#git clone https://github.com/pmem/syscall_intercept.git
+	#@rm -rf "jemalloc-4.5.0"; tar xf jemalloc-4.5.0.tar.bz2
 
 clean:
 	@rm -rf dpdk-$(DPDK_VER)/x86_64-native-linuxapp-gcc

@@ -16,6 +16,7 @@ OBJS = $(SRCS:.c=.o)
 # Flags for Bluefield NIC.
 ifeq (aarch64-linux-gnu,$(SYS))
     NIC_OFFLOAD_FLAGS = -DNIC_OFFLOAD
+	CC += -fcommon
 else
     NIC_OFFLOAD_FLAGS =
 endif

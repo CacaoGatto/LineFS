@@ -2,6 +2,7 @@
 .PHONY: download all clean
 all:
 	#make install -C dpdk-$(DPDK_VER) T=x86_64-native-linuxapp-gcc DESTDIR=dpdk-$(DPDK_VER)/ -j8
+	chmod a+x ./spdk/isa-l/tools/*.sh
 	(cd spdk && \
 	 cd scripts && \
 	 sudo ./pkgdep.sh && \
@@ -17,9 +18,9 @@ redownload:
 	########
 	# 	SPDK
 	########
-	@rm -rf spdk
-	git clone https://github.com/spdk/spdk.git
-	(cd spdk; git checkout v21.07; git submodule update --init)
+	#@rm -rf spdk
+	#git clone https://github.com/spdk/spdk.git
+	#(cd spdk; git checkout v21.07; git submodule update --init)
 	#(cd spdk; git checkout 88e3ffd7b; git submodule update --init)
 
 clean:

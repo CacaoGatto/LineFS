@@ -1,0 +1,9 @@
+.vscode
+**/*.mod*
+**/*.o
+**/*.cmd
+**/*.ko
+**/*.pyc
+Module.symvers
+modules.order
+test

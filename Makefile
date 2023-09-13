@@ -3,9 +3,9 @@
 all:
 	$(error Argument required)
 
-host-init: redownload host-lib spdk-init kernfs libfs bench-micro mkfs
+host-init: host-lib spdk-init kernfs libfs bench-micro mkfs
 
-snic-init: redownload snic-lib kernfs
+snic-init: snic-lib kernfs
 
 redownload:
 	cd libfs/lib && make redownload

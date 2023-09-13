@@ -3,8 +3,8 @@
 
 # basic.
 # export NET_INTERFACE_NAME="enp175s0f1"
-export X86_NET_INTERFACE_NAME='enp59s0f0'
-export ARM_NET_INTERFACE_NAME='enp3s0f0'
+export X86_NET_INTERFACE_NAME='ens10f0np0'
+export ARM_NET_INTERFACE_NAME='enp3s0f0s0'
 export PORT_NUM='12345'
 export LOW_LATENCY_PORT_NUM='12346'
 export PERSIST_NVM=1
@@ -62,7 +62,7 @@ export REQUEST_RATE_LIMIT_THRESHOLD=500
 export PREFETCH_DATA_CAP=2500	# Prefetch data cap in MB.
 
 # For experiment
-export X86_SIGNAL_PATH='/path/to/signal/directory/in/x86' # Signal path in X86 host. It should be the same as $PROJ_DIR(in global.sh)/scripts/signals.
-export ARM_SIGNAL_PATH='/path/to/signal/directory/in/arm' # Signal path in ARM SoC. It should be the same as $NIC_PROJ_DIR(in global.sh)/scripts/signals.
+export X86_SIGNAL_PATH='/home/yxy/LineFS/scripts/signals' # Signal path in X86 host. It should be the same as $PROJ_DIR(in global.sh)/scripts/signals.
+export ARM_SIGNAL_PATH='/home/yxy/LineFS/scripts/signals' # Signal path in ARM SoC. It should be the same as $NIC_PROJ_DIR(in global.sh)/scripts/signals.
 export DIGEST_NOOP=0	# Not supported in NIC-offloading setup.
 export HYPERLOOP_OPS_FILE_PATH='/home/yulistic/assise-host-only/libfs/lib/hyperloop/trace/micro/latency/sw.1g.4K'

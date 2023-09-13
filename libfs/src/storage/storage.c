@@ -28,7 +28,7 @@ char *g_dev_path[] = {
 	(char *)"/dev/dax0.0",
 	(char *)"/backup/mlfs_ssd",
 	(char *)"/backup/mlfs_hdd",
-	(char *)"/dev/dax0.1",
+	(char *)"/dev/dax1.0",
 };
 #endif
 

@@ -82,7 +82,7 @@ extern int log_fd;
 		gettimeofday(&t, NULL); \
 		dprintf(log_fd, "[%ld.%03ld][%s():%d] " fmt,  \
 				t.tv_sec, t.tv_usec, __func__, \
-				__LINE__, __VA_ARGS__); \
+				__LINE__, ##__VA_ARGS__); \
 		fsync(log_fd); \
 	} while (0)
 #else
@@ -93,7 +93,7 @@ extern int log_fd;
 // #define mlfs_muffled(fmt, ...) \
 //         do { \
 //                 fprintf(stdout, "[tid:%lu][%s():%d] " fmt,  \
-//                                 get_tid(), __func__, __LINE__, __VA_ARGS__); \
+//                                 get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
 //         } while (0)
 
 #ifdef MLFS_DEBUG
@@ -101,7 +101,7 @@ extern int log_fd;
 #define mlfs_debug(fmt, ...) \
 	do { \
 		fprintf(stdout, "[tid:%lu][%s():%d] " fmt,  \
-				get_tid(), __func__, __LINE__, __VA_ARGS__); \
+				get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
 	} while (0)
 #else
 #define mlfs_debug(...)
@@ -111,7 +111,7 @@ extern int log_fd;
 #define mlfs_info(fmt, ...) \
 	do { \
 		fprintf(stdout, "[tid:%lu][%s():%d] " fmt,  \
-				get_tid(), __func__, __LINE__, __VA_ARGS__); \
+				get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
 	} while (0)
 #else
 #define mlfs_info(...)
@@ -121,12 +121,12 @@ extern int log_fd;
 //#define mlfs_printf(fmt, ...) \
 //	do { \
 //		fprintf(stdout, "[%s():%d] " fmt,  \
-//				__func__, __LINE__, __VA_ARGS__); \
+//				__func__, __LINE__, ##__VA_ARGS__); \
 //	} while (0)
 #define mlfs_printf(fmt, ...) \
 	do { \
 		fprintf(stdout, "%lu %s():%d " fmt,  \
-				get_tid(), __func__, __LINE__, __VA_ARGS__); \
+				get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
 	} while (0)
 #else
 #define mlfs_printf(...)
@@ -205,7 +205,7 @@ void abort (void);
 #define pr_rep(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " ANSI_COLOR_GREEN fmt ANSI_COLOR_RESET "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_rep(...)
@@ -215,7 +215,7 @@ void abort (void);
 #define pr_lpref(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " ANSI_COLOR_GREEN_BOLD fmt ANSI_COLOR_RESET "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_lpref(...)
@@ -225,7 +225,7 @@ void abort (void);
 #define pr_loghdrs(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " ANSI_COLOR_BRIGHT_GREEN fmt ANSI_COLOR_RESET "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_loghdrs(...)
@@ -235,7 +235,7 @@ void abort (void);
 #define pr_digest(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " ANSI_COLOR_YELLOW fmt ANSI_COLOR_RESET "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_digest(...)
@@ -245,7 +245,7 @@ void abort (void);
 #define pr_rpc(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " ANSI_COLOR_BLUE fmt ANSI_COLOR_RESET "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_rpc(...)
@@ -255,7 +255,7 @@ void abort (void);
 #define pr_rcoal(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " ANSI_COLOR_CYAN fmt ANSI_COLOR_RESET "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_rcoal(...)
@@ -265,7 +265,7 @@ void abort (void);
 #define pr_posix(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " ANSI_COLOR_MAGENTA fmt ANSI_COLOR_RESET "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_posix(...)
@@ -275,7 +275,7 @@ void abort (void);
 #define pr_setup(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " fmt "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_setup(...)
@@ -285,7 +285,7 @@ void abort (void);
 #define pr_rdma(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " fmt "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_rdma(...)
@@ -295,7 +295,7 @@ void abort (void);
 #define pr_meta(fmt, ...) \
     do { \
         fprintf(stdout, ANSI_COLOR_RED fmt ANSI_COLOR_RESET "\n",  \
-                __VA_ARGS__); \
+                ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_meta(...)
@@ -305,7 +305,7 @@ void abort (void);
 #define pr_dram_alloc(fmt, ...) \
     do { \
         fprintf(stdout, "%lu %s():%d " fmt "\n",  \
-                get_tid(), __func__, __LINE__, __VA_ARGS__); \
+                get_tid(), __func__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_dram_alloc(...)
@@ -315,7 +315,7 @@ void abort (void);
 #define pr_pipe(fmt, ...) \
     do { \
         fprintf(stdout, "%lu " ANSI_COLOR_CYAN fmt ANSI_COLOR_RESET "\n" ,  \
-                get_tid(), __VA_ARGS__); \
+                get_tid(), ##__VA_ARGS__); \
     } while (0)
 #else
 #define pr_pipe(...)

@@ -22,17 +22,13 @@
 static struct peer_id hot_replicas[g_n_hot_rep] = {
 #ifdef NIC_OFFLOAD
         // 1st machine - Bluefield NIC
-	{ .ip = "192.168.13.114", .role = HOT_REPLICA, .type = KERNFS_NIC_PEER},
+	{ .ip = "192.168.200.152", .role = HOT_REPLICA, .type = KERNFS_NIC_PEER},
         // 1st machine - Host
-	{ .ip = "192.168.13.113", .role = HOT_REPLICA, .type = KERNFS_PEER},
+	{ .ip = "192.168.200.52", .role = HOT_REPLICA, .type = KERNFS_PEER},
         // 2nd machine - Bluefield NIC
-        { .ip = "192.168.13.118", .role = HOT_REPLICA, .type = KERNFS_NIC_PEER},
+        { .ip = "192.168.200.153", .role = HOT_REPLICA, .type = KERNFS_NIC_PEER},
         // 2nd machine - Host
-        { .ip = "192.168.13.117", .role = HOT_REPLICA, .type = KERNFS_PEER},
-        // 3rd machine - Bluefield NIC
-	{ .ip = "192.168.13.116", .role = HOT_REPLICA, .type = KERNFS_NIC_PEER},
-        // 3rd machine - Host
-	{ .ip = "192.168.13.115", .role = HOT_REPLICA, .type = KERNFS_PEER},
+        { .ip = "192.168.200.53", .role = HOT_REPLICA, .type = KERNFS_PEER},
 
 #else   // No offloading
 

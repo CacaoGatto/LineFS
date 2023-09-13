@@ -172,7 +172,7 @@ LD_FLAGS = -lpthread -laio -lstdc++ -lm -L$(NVML_DIR)/nondebug/ -lrt -L$(RDMA_DI
 
 ifeq (,$(filter $(SYS), aarch64-linux-gnu))
 	# x86
-LD_FLAGS += -lpmem -L$(SPDK_ROOT_DIR) -Wl,-rpath=$(abspath $(SPDK_ROOT_DIR)) -lnuma
+LD_FLAGS += -lpmem -L$(SPDK_ROOT_DIR) -Wl,-rpath=$(abspath $(SPDK_ROOT_DIR)) -lnuma  -L$(SPDK_ROOT_DIR)/isa-l/.libs -lisal
 INCLUDES += -I$(SPDK_ROOT_DIR)/include
 
 include $(SPDK_ROOT_DIR)/mk/spdk.common.mk
@@ -187,6 +187,7 @@ else
 	#ARM
 LD_FLAGS += -llz4 -L$(LZ4_DIR)/lib
 INCLUDES += -I$(LZ4_DIR)/lib
+DEBUG += -fcommon
 endif
 ############### No effect setting flags here. ##################################
 ##MLFS_FLAGS = -DUSE_SLAB

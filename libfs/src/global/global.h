@@ -113,7 +113,7 @@ void print_mlfs_configs(void);
 #define SHM_NAME "/mlfs_shm"
 
 #ifdef NIC_OFFLOAD
-#define g_n_kernfs_nic 3    // The number of kernfs on SmartNIC. Change it correctly.
+#define g_n_kernfs_nic 2   // The number of kernfs on SmartNIC. Change it correctly.
 #define g_n_hot_rep (2 * g_n_kernfs_nic)  // It includes kernfs on SmartNIC.
 #else
 #define g_n_kernfs_nic 0    // The number of kernfs on SmartNIC.

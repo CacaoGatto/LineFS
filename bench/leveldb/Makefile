@@ -144,7 +144,7 @@ LIBFS_DIR = $(SRC_ROOT)/libfs/build/
 NVML_DIR = $(SRC_ROOT)/libfs/lib/nvml/src/nondebug/
 MLFS_INCLUDES= $(LIBFS_DIR)/../src
 RDMA_DIR := $(abspath $(SRC_ROOT)/libfs/lib/rdma)
-RDMA_CORE_DIR := $(abspath $(SRC_ROOT)/libfs/lib/rdma-core)
+#RDMA_CORE_DIR := $(abspath $(SRC_ROOT)/libfs/lib/rdma-core)
 
 CFLAGS += -I $(MLFS_INCLUDES) #-fsanitize=address
 CXXFLAGS += -I $(MLFS_INCLUDES) #-fsanitize=address
@@ -155,7 +155,7 @@ MLFS_LDFLAGS = -Wl,-rpath=$(abspath $(LIBFS_DIR)) \
 	       -Wl,-rpath=/usr/lib/x86_64-linux-gnu/ \
 	       -Wl,-rpath=/lib/x86_64-linux-gnu/ \
 	       -L$(LIBFS_DIR)  \
-	       -L$(RDMA_CORE_DIR)/build/lib -lrdmacm -libverbs \
+	       -lrdmacm -libverbs \
 	       -L$(RDMA_DIR) -lrdma \
 	       -lmlfs -lpthread -lrt -lm
 

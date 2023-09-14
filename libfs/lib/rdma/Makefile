@@ -5,7 +5,7 @@ CC = gcc -std=gnu11
 #CFLAGS = -fPIC -Wall -Wextra -O2 -g # C flags
 CFLAGS = -fPIC -O2 -g
 # CFLAGS = -fPIC -O0 -g
-CFLAGS += -I../rdma-core/build/include
+#CFLAGS += -I../rdma-core/build/include
 LDFLAGS = -shared  # linking flags
 
 RM = rm -f  # rm command
@@ -37,7 +37,7 @@ CPPFLAGS += -D_GNU_SOURCE
 CPPFLAGS += -fvisibility=default
 CPPFLAGS += $(NIC_OFFLOAD_FLAGS)
 
-LDFLAGS +=  -L../rdma-core/build/lib -Wl,-rpath=$(abspath ../rdma-core/build/lib)
+#LDFLAGS +=  -L../rdma-core/build/lib -Wl,-rpath=$(abspath ../rdma-core/build/lib)
 LDLIBS = -lrdmacm -libverbs -lpthread
 
 .PHONY: all

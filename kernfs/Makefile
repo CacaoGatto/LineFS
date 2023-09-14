@@ -283,4 +283,4 @@ $(foreach bdir,$(BUILD_DIR),$(eval $(call make-goal,$(bdir))))
 buildarmlib:
 	$(CC) -c ds/lib/bitops_arch_arm64.S -o ds/lib/bitops_arch_arm64.o
 	$(CC) -I$(LIBFS_DIR)/src -c ds/lib/hweight.c -o ds/lib/hweight.o
-	make -w -C kernfs/lib/simple-lz4/
+	make -w -C lib/simple-lz4/

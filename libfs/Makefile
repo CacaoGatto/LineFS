@@ -116,7 +116,7 @@ OBJCPP    := $(patsubst src/%.cpp,build/%.o,$(SRCCPP))
 NVML_DIR := $(abspath $(CURDIR)/lib/nvml/src)
 JEMALLOC_DIR := $(abspath $(CURDIR)/lib/jemalloc-4.5.0)
 RDMA_DIR := $(abspath $(CURDIR)/lib/rdma)
-RDMA_CORE_DIR := $(abspath $(CURDIR)/lib/rdma-core)
+#RDMA_CORE_DIR := $(abspath $(CURDIR)/lib/rdma-core)
 HYPERLOOP_DIR := $(abspath $(CURDIR)/lib/hyperloop)
 
 SYSCALL_INTERCEPT_DIR := $(abspath $(CURDIR)/lib/syscall_intercept/install)
@@ -126,16 +126,16 @@ else
     SYSCALL_INTERCEPT_LIB_DIR := $(SYSCALL_INTERCEPT_DIR)/lib
 endif
 
-INCLUDES  := $(addprefix -I,src/ $(RDMA_CORE_DIR)/build/include $(RDMA_DIR) $(NVML_DIR)/include $(SYSCALL_INTERCEPT_DIR)/include $(HYPERLOOP_DIR))
+INCLUDES  := $(addprefix -I,src/ $(RDMA_DIR) $(NVML_DIR)/include $(SYSCALL_INTERCEPT_DIR)/include $(HYPERLOOP_DIR))
 
 ifneq (,$(findstring -DHYPERLOOP,$(MLFS_FLAGS)))
     # With hyperloop
     $(info With Hyperloop library.)
-    LD_FLAGS = -lpthread -laio -lstdc++ -lm -lnuma -L$(NVML_DIR)/nondebug/ -lpmem -lrt -L$(RDMA_CORE_DIR)/build/lib -Wl,-rpath=$(RDMA_CORE_DIR)/build/lib -L$(HYPERLOOP_DIR)/build/libhyperclient -Wl,-rpath=$(HYPERLOOP_DIR)/build/libhyperclient -lhyperclient #-Wl,-fuse-ld=gold
+    LD_FLAGS = -lpthread -laio -lstdc++ -lm -lnuma -L$(NVML_DIR)/nondebug/ -lpmem -lrt -L$(HYPERLOOP_DIR)/build/libhyperclient -Wl,-rpath=$(HYPERLOOP_DIR)/build/libhyperclient -lhyperclient #-Wl,-fuse-ld=gold
 else
     # Without hyperloop
     $(info Without Hyperloop library.)
-    LD_FLAGS = -lpthread -laio -lstdc++ -lm -lnuma -L$(NVML_DIR)/nondebug/ -lpmem -lrt -L$(RDMA_CORE_DIR)/build/lib -Wl,-rpath=$(RDMA_CORE_DIR)/build/lib #-Wl,-fuse-ld=gold
+    LD_FLAGS = -lpthread -laio -lstdc++ -lm -lnuma -L$(NVML_DIR)/nondebug/ -lpmem -lrt #-Wl,-fuse-ld=gold
 endif
 
 # ############## No effect setting flags here. ##################################

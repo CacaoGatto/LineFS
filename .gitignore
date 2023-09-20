@@ -11,6 +11,7 @@ tags
 *.tar.gz
 *.tar.bz2
 #.gdbinit
+.vscode/
 
 #module debris
 *.o.cmd

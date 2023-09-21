@@ -5,6 +5,11 @@
 #include "storage/storage.h" // nic_slab
 #include "limit_rate.h"
 
+#if (g_n_kernfs_nic < 3)
+#define SHORT_PATH
+#include "copy_log.h"
+#endif
+
 threadpool thpool_coalesce;
 
 // Thread pools of the next pipeline stages.
@@ -124,6 +129,8 @@ void coalesce_log(void *arg)
 #ifndef NO_PIPELINING
 	thpool_add_work(thpool_loghdr_build, build_loghdr_list, (void *)bl_arg);
 #endif
+
+#ifndef SHORT_PATH
 	// 2. Compress.
 	START_TL_TIMER(evt_coalesce_compress_arg);
 
@@ -157,6 +164,56 @@ void coalesce_log(void *arg)
 		build_loghdr_list((void *)bl_arg);
 #endif
 	}
+#else
+	// If there are only two replicas, we don't need to compress.
+	// Just copy original log to the next (and last) replica.
+
+	atomic_bool *copy_log_done_p;
+
+#if defined(NO_PIPELINEING) & ! defined(NO_PIPELINING_BG_COPY)
+	// No allocation.
+#else
+	// Allocate copy done flag.
+	copy_log_done_p = (atomic_bool *)mlfs_alloc(sizeof(atomic_bool));
+	atomic_init(copy_log_done_p, 0);
+#endif
+
+	int libfs_id = rctx->peer->id;
+	copy_to_last_replica_arg *cr_arg =
+		(copy_to_last_replica_arg *)mlfs_alloc(
+			sizeof(copy_to_last_replica_arg));
+	cr_arg->rctx = g_sync_ctx[libfs_id];
+	cr_arg->libfs_id = libfs_id;
+	cr_arg->seqn = c_arg->seqn;
+	cr_arg->log_buf = c_arg->log_buf;
+	cr_arg->log_size = c_arg->log_size;
+	cr_arg->orig_log_size = c_arg->log_size;
+	cr_arg->start_blknr = c_arg->fetch_start_blknr;
+	cr_arg->copy_log_done_p = copy_log_done_p;
+	cr_arg->fsync = c_arg->fsync;
+	cr_arg->fsync_ack_addr = c_arg->fsync_ack_addr;
+
+	if (c_arg->fsync) {
+		END_TL_TIMER(evt_coalesce);
+		copy_log_to_last_replica_bg((void *)cr_arg);
+#ifdef NO_PIPELINING
+		// On fsync, replicate log first.
+		build_loghdr_list((void *)bl_arg);
+#endif
+	} else {
+		// NOTE We don't send ack to libfs on fsync assuming that local copy
+		// finishes earlier than remote copy.
+		thpool_add_work(thpool_copy_to_last_replica,
+				copy_log_to_last_replica_bg, (void *)cr_arg);
+		END_TL_TIMER(evt_coalesce);
+
+#ifdef NO_PIPELINING
+		// If it is not fsync, a replication path is created with a new
+		// thread.
+		build_loghdr_list((void *)bl_arg);
+#endif
+	}
+#endif  // SHORT_PATH
 
 	mlfs_free(arg);
 }

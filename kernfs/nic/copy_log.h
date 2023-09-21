@@ -7,6 +7,8 @@
 #include "pipeline_common.h"
 #include "concurrency/thpool.h"
 
+extern threadpool thpool_copy_to_last_replica; // May be used by both primary and replica 1.
+
 struct log_copy_to_local_nvm_arg {
 	struct replication_context *rctx;
 	int libfs_id;

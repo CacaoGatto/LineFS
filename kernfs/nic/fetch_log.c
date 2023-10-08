@@ -271,9 +271,9 @@ static int read_log_from_primary_nic_dram(int libfs_id, uintptr_t local_addr,
 void fetch_log_from_primary_nic_dram_bg(void *arg)
 {
 	// FIXME If more than 3 replicas are required, this function should be called
-	// by NIC of replica N - 1 only (N is the number of replicas). And a new
+	// by NIC of replica N - 1 only (N is the number of replicas). Besides, a new
 	// function should be realized to fetch log from previous NIC's DRAM to current
-	// NIC's DRAM, then inform next NIC to fetch log from current NIC's DRAM.
+	// NIC's DRAM, and then inform next NIC to fetch log from current NIC's DRAM.
 
 	START_TL_TIMER(evt_fetch_from_primary_nic);
 

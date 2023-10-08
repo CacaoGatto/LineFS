@@ -120,6 +120,10 @@ void print_mlfs_configs(void);
 #define g_n_hot_rep 3	    // Change it correctly.
 #endif
 
+#if (g_n_kernfs_nic < 3)
+#define SHORT_PATH
+#endif
+
 #define g_n_hot_bkp 0
 #define g_n_cold_bkp 0
 #define g_n_ext_rep 0

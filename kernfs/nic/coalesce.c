@@ -5,8 +5,7 @@
 #include "storage/storage.h" // nic_slab
 #include "limit_rate.h"
 
-#if (g_n_kernfs_nic < 3)
-#define SHORT_PATH
+#ifdef SHORT_PATH
 #include "copy_log.h"
 #endif
 
@@ -168,16 +167,6 @@ void coalesce_log(void *arg)
 	// If there are only two replicas, we don't need to compress.
 	// Just copy original log to the next (and last) replica.
 
-	atomic_bool *copy_log_done_p;
-
-#if defined(NO_PIPELINEING) & ! defined(NO_PIPELINING_BG_COPY)
-	// No allocation.
-#else
-	// Allocate copy done flag.
-	copy_log_done_p = (atomic_bool *)mlfs_alloc(sizeof(atomic_bool));
-	atomic_init(copy_log_done_p, 0);
-#endif
-
 	int libfs_id = rctx->peer->id;
 	copy_to_last_replica_arg *cr_arg =
 		(copy_to_last_replica_arg *)mlfs_alloc(
@@ -189,7 +178,7 @@ void coalesce_log(void *arg)
 	cr_arg->log_size = c_arg->log_size;
 	cr_arg->orig_log_size = c_arg->log_size;
 	cr_arg->start_blknr = c_arg->fetch_start_blknr;
-	cr_arg->copy_log_done_p = copy_log_done_p;
+	cr_arg->copy_log_done_p = (atomic_bool *) fetch_log_done_p;
 	cr_arg->fsync = c_arg->fsync;
 	cr_arg->fsync_ack_addr = c_arg->fsync_ack_addr;
 

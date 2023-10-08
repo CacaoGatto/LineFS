@@ -370,6 +370,15 @@ void copy_log_to_last_replica_bg(void *arg)
 					   c_arg->orig_log_size, c_arg->fsync,
 					   rctx->next_digest_sockfd);
 
+#ifdef SHORT_PATH
+
+	uint64_t * fetch_log_done_p = (uint64_t *) c_arg->copy_log_done_p;
+	*fetch_log_done_p = 1;
+
+	END_TL_TIMER(evt_copy_to_last_replica);
+
+#else
+
 	// Next pipeline stage 4: Release log buffer.
 	log_buf_free_arg *f_arg =
 		(log_buf_free_arg *)mlfs_alloc(sizeof(log_buf_free_arg));
@@ -385,6 +394,9 @@ void copy_log_to_last_replica_bg(void *arg)
 	thpool_add_work(thpool_free_log_buf, free_log_buf, (void*)f_arg);
 	END_TL_TIMER(evt_copy_to_last_replica);
 #endif
+
+#endif  // SHORT_PATH
+
 	mlfs_free(rdma_meta);
 	mlfs_free(arg);
 

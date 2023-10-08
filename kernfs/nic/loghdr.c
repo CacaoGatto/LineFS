@@ -332,7 +332,7 @@ void fetch_loghdrs(void *arg)
 	int prev_kernfs_id, sock;
 	struct replication_context *rctx;
 	int is_last;
-	uint64_t *fetch_loghdr_done_p;
+	uint64_t *fetch_loghdr_done_p = NULL;
 	uint32_t wr_id;
 	fetch_loghdrs_arg *fl_arg = (fetch_loghdrs_arg *)arg;
 

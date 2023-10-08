@@ -8,6 +8,7 @@
 #include "distributed/rpc_interface.h" // g_self_id
 #include "storage/storage.h"
 #include "io/block_io.h"
+#include "io/balloc.h"
 #include "extents.h"
 #include "digest.h"
 

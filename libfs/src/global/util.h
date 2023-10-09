@@ -258,6 +258,10 @@ static inline void init_rt_bw_stat(rt_bw_stat *stat, char *name)
 	}
 	stat->name = name;
 	pthread_spin_init(&stat->lock, PTHREAD_PROCESS_PRIVATE);
+
+#ifdef EXP_FEATURES
+	stat->bytes_until_now = (uint64_t)mlfs_conf.prefetch_data_cap * (1024 * 1024); /* MB to Bytes */
+#endif
 }
 
 static inline void check_rt_bw(rt_bw_stat *stat, uint64_t sent_bytes)

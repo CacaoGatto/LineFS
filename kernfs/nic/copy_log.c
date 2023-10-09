@@ -3,7 +3,7 @@
 #include "distributed/rpc_interface.h"
 #include "host_memcpy.h"
 #include "compress.h"
-
+#include "limit_rate.h"
 
 threadpool thpool_copy_to_local_nvm;	// In Replica 1.
 threadpool thpool_copy_to_last_replica; // In Replica 1.
@@ -311,6 +311,10 @@ void copy_log_to_last_replica_bg(void *arg)
 	START_TL_TIMER(evt_copy_log_to_last_wait_wr_compl);
 	IBV_AWAIT_WORK_COMPLETION(sock, wr_id);
 	END_TL_TIMER(evt_copy_log_to_last_wait_wr_compl);
+
+#ifdef EXP_FEATURES
+	unlimit_prefetch_rate(c_arg->log_size);
+#endif
 
 #ifdef PROFILE_REALTIME_NET_BW_USAGE
 	check_remote_copy_net_bw(c_arg->log_size);

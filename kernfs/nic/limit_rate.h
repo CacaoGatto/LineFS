@@ -23,4 +23,8 @@ static void unset_rate_limit_flag(uintptr_t target_addr, int sockfd);
 static void limit_req_rate_of_primary(void);
 static void unlimit_req_rate_of_primary(void);
 void limit_prefetch_rate(uint64_t sent_bytes);
+
+#ifdef EXP_FEATURES
+void unlimit_prefetch_rate(uint64_t sent_bytes);
+#endif
 #endif

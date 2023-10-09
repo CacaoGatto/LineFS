@@ -305,6 +305,8 @@ static uint64_t update_prefetch_bw_usage(rt_bw_stat *stat, uint64_t sent_bytes)
 	return ret;
 }
 
+#ifndef EXP_FEATURES
+
 /**
  * @brief Limit the rate of fetching data from local PM in Primary (Prefetch).
  * It is required due to the difference between PCIe (15.75GB/s) and network
@@ -327,3 +329,45 @@ void limit_prefetch_rate(uint64_t sent_bytes)
 		}
 	}
 }
+
+#else
+
+static inline int dec_available_prefetch_bw(rt_bw_stat * stat, uint64_t sent_bytes)
+{
+	int ret = 0;
+
+	pthread_spin_lock(&stat->lock);
+
+	if (stat->bytes_until_now >= sent_bytes) {
+		stat->bytes_until_now -= sent_bytes;
+		ret = 1;
+	}
+
+	pthread_spin_unlock(&stat->lock);
+
+	return ret;
+}
+
+static inline void inc_available_prefetch_bw(rt_bw_stat * stat, uint64_t sent_bytes)
+{
+	pthread_spin_lock(&stat->lock);
+
+	stat->bytes_until_now += sent_bytes;
+
+	pthread_spin_unlock(&stat->lock);
+}
+
+void limit_prefetch_rate(uint64_t sent_bytes)
+{
+	while (!dec_available_prefetch_bw(&prefetch_rt_bw, sent_bytes))
+	{
+		cpu_relax();
+	}
+}
+
+void unlimit_prefetch_rate(uint64_t sent_bytes)
+{
+	inc_available_prefetch_bw(&prefetch_rt_bw, sent_bytes);
+}
+
+#endif // EXP_FEATURES

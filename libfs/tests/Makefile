@@ -1,6 +1,6 @@
 CC = gcc -std=gnu99
 #CC = c99
-EXE = iotest file_basic small_io falloc_test rsync_test lock_test lock_perf rbtree_test dir_test many_files_test fork_io readdir_test statdir_test append_test fwrite_fread slave_test partial_update_test ftrunc_test mkdir_test lease_test maildir_test mkdir_user iobench
+EXE = iotest simple_test file_basic small_io falloc_test rsync_test lock_test lock_perf rbtree_test dir_test many_files_test fork_io readdir_test statdir_test append_test fwrite_fread slave_test partial_update_test ftrunc_test mkdir_test lease_test maildir_test mkdir_user iobench
 #$(info $(EXE))
 
 CUR_DIR = $(shell pwd)
@@ -82,6 +82,9 @@ mkdir_test: mkdir_test.c time_stat.o
 iotest: iotest.cc time_stat.o thread.cc
 	$(CXX) -std=c++11 -g -Ofast -o $@ $^  -I$(INCLUDES) -L$(LIBFS_DIR) -lmlfs  -L$(RDMA_DIR) -DMLFS $(CFLAGS) $(LDFLAGS)
 	$(CXX) -std=c++11 -g -Ofast -o $(addsuffix .normal, $@) $^ $(CFLAGS) -L$(NVML_DIR) -lpmem -lpthread -lm -lrt -Wl,-rpath=$(abspath $(NVML_DIR))
+
+simple_test: simple_test.cc time_stat.o thread.cc
+	$(CXX) -std=c++11 -g -Ofast -o $@ $^  -I$(INCLUDES) -L$(LIBFS_DIR) -lmlfs  -L$(RDMA_DIR) -DMLFS $(CFLAGS) $(LDFLAGS)
 
 fwrite_fread: fwrite_fread.cc time_stat.o thread.cc
 	$(CXX) -std=c++11 -g -Ofast -o $@ $^  -I$(INCLUDES) -L$(LIBFS_DIR) -lmlfs -L$(RDMA_DIR)  -DMLFS $(CFLAGS) $(LDFLAGS) 

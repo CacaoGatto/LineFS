@@ -32,11 +32,12 @@ void print_mlfs_configs(void);
 //#define g_log_size 430080UL // # of blocks per log (1680 MB)
 // #define g_log_size 32768UL // (128 MB)
 // #define g_log_size 65536UL // (256 MB)
-#define g_log_size 131072UL // (512 MB)
+// #define g_log_size 131072UL // (512 MB)
 //#define g_log_size 262144UL // (1 GB)
 //#define g_log_size 524288UL // (2 GB)
 //#define g_log_size 1310720UL // (5 GB)
 //#define g_log_size 131072UL
+#define g_log_size 1572864UL // (6 GB)
 
 #define g_directory_shift  16UL
 #define g_directory_mask ((1 << ((sizeof(inum_t) * 8) - g_directory_shift)) - 1)
@@ -81,7 +82,8 @@ void print_mlfs_configs(void);
 // maximum number of libfs processes
 // FIXME Setting MAX_LIBFS_PROCESSES to 6, 12 incurs a deadlock at 'ilock()' when running iobench.
 //#define MAX_LIBFS_PROCESSES 24
-#define MAX_LIBFS_PROCESSES 8
+//#define MAX_LIBFS_PROCESSES 8
+#define MAX_LIBFS_PROCESSES 4  // for less stall in log alloc
 
 // maximum size of full path
 //#define MAX_PATH 4096

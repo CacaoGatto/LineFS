@@ -80,8 +80,12 @@ extern "C" {
 // static uint64_t dev_size[g_n_devices + 1] = {0, 20*1024*1024*1024UL, 5368709120UL, 5368709120UL, 20*1024*1024*1024UL};
 
 // 19GB
-static uint64_t dev_size[g_n_devices + 1] = {0, 19*1024*1024*1024UL, 5368709120UL, 5368709120UL, 19*1024*1024*1024UL};
+// static uint64_t dev_size[g_n_devices + 1] = {0, 19*1024*1024*1024UL, 5368709120UL, 5368709120UL, 19*1024*1024*1024UL};
 //
+
+// 31GB
+static uint64_t dev_size[g_n_devices + 1] = {0, 31*1024*1024*1024UL, 5368709120UL, 5368709120UL, 31*1024*1024*1024UL};
+
 //
 // 32GB
 // static uint64_t dev_size[g_n_devices + 1] = {0, 32*1024*1024*1024UL, 5368709120UL, 5368709120UL, 32*1024*1024*1024UL};

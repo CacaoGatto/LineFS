@@ -52,8 +52,9 @@ COMMON_FLAGS += $(PROFILE_FLAGS)
 ### With NIC-offloading.
 WITH_SNIC_FLAGS = $(COMMON_FLAGS)
 WITH_SNIC_FLAGS += -DNIC_OFFLOAD
-WITH_SNIC_FLAGS += -DLIMIT_PREFETCH 	  # Not working correctly if THREAD_NUM_LOG_PREFETCH is greater than 1.
-WITH_SNIC_FLAGS += -DPIPELINE_RATE_LIMIT  # Not working correctly if THREAD_NUM_LOG_PREFETCH is greater than 1.
+#WITH_SNIC_FLAGS += -DLIMIT_PREFETCH 	  # Not working correctly if THREAD_NUM_LOG_PREFETCH is greater than 1.
+#WITH_SNIC_FLAGS += -DLIMIT_PREFETCH_THRESHOLD=480
+#WITH_SNIC_FLAGS += -DPIPELINE_RATE_LIMIT  # Not working correctly if THREAD_NUM_LOG_PREFETCH is greater than 1.
 WITH_SNIC_FLAGS += -DBATCH_MEMCPY_LIST
 
 ifeq (,$(filter $(DFS), assise))

@@ -1172,6 +1172,12 @@ int _rc_acquire_buffer(int sockfd, void ** ptr, int user)
 #endif
 #if 1
 	struct conn_context *ctx = (struct conn_context *) get_connection(sockfd)->context;
+
+	// FIXME When more than MAX_BUFFER requests come together, some of them may get a
+	// same buffer ID. Furthermore, if send_idx overflows, the stride of buffer collision
+	// could decrease to a very small value. e.g., the 250th request and 256th request
+	// may get the same buffer ID if MAX_BUFFER is 50.
+	// A simple patch is to set MAX_BUFFER to a large enough power of 2, like 128.
 	pthread_spin_lock(&ctx->acquire_buf_lock);
 	int i = ctx->send_idx++ % MAX_BUFFER;
 	pthread_spin_unlock(&ctx->acquire_buf_lock);

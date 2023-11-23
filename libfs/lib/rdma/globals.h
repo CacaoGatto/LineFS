@@ -7,11 +7,11 @@
 #define MAX_CONNECTIONS 1000 // max # of RDMA connections per peer
 #define MAX_MR 10 // max # of memory regions per connection
 #define MAX_PENDING 500 // max # of pending app responses per connection
-#define MAX_BUFFER 50 // max # of msg buffers per connection TODO check with smaller size. (Original was 5)
-// #define MAX_SEND_QUEUE_SIZE 1024 // depth of rdma send queue
-// #define MAX_RECV_QUEUE_SIZE 1024 // depth of rdma recv queue
-#define MAX_SEND_QUEUE_SIZE 50 // depth of rdma send queue
-#define MAX_RECV_QUEUE_SIZE 50 // depth of rdma recv queue
+#define MAX_BUFFER 128 // max # of msg buffers per connection TODO check with smaller size. (Original was 5)
+#define MAX_SEND_QUEUE_SIZE 1024 // depth of rdma send queue
+#define MAX_RECV_QUEUE_SIZE 1024 // depth of rdma recv queue
+// #define MAX_SEND_QUEUE_SIZE 50 // depth of rdma send queue
+// #define MAX_RECV_QUEUE_SIZE 50 // depth of rdma recv queue
 // #define MAX_SEND_QUEUE_SIZE 32768 // depth of rdma send queue
 // #define MAX_RECV_QUEUE_SIZE 32768 // depth of rdma recv queue
 #define MAX_SEND_SGE_SIZE 30 // Max number of send SGE (Ref. ibv_devinfo -v) # It should coincide with the constant in libfs/src/global/global.h

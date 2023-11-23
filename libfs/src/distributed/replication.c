@@ -1083,7 +1083,10 @@ static void limit_prefetch_rate(void)
 
 #ifdef LIMIT_PREFETCH
 
+#ifndef LIMIT_PREFETCH_THRESHOLD
 #define LIMIT_PREFETCH_THRESHOLD 60UL // hit almost max throughput with 1.
+
+#endif
 // #define LIMIT_PREFETCH_THRESHOLD 3UL // hit almost max throughput with 1.
 // #define LIMIT_PREFETCH_THRESHOLD 1UL
 

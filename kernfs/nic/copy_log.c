@@ -273,7 +273,7 @@ void copy_log_to_last_replica_bg(void *arg)
 	struct replication_context *rctx;
 	rdma_meta_t *rdma_meta, *rdma_meta_r;
 	uintptr_t remote_addr;
-	uint32_t wr_id;
+	uint32_t wr_id, flow_id;
 	int sock;
 
 	print_copy_to_last_replica_arg(c_arg);
@@ -291,7 +291,7 @@ void copy_log_to_last_replica_bg(void *arg)
 		c_arg->start_blknr << g_block_size_shift);
 
 	sock = rctx->next_rep_data_sockfd[1];
-	wr_id = IBV_WRAPPER_WRITE_ASYNC(sock, rdma_meta, MR_DRAM_BUFFER,
+	flow_id = IBV_WRAPPER_WRITE_ASYNC(sock, rdma_meta, MR_DRAM_BUFFER,
 					MR_NVM_LOG);
 	// Replaced with log_persist request to replica 2 host.
 	// Send READ RDMA to persist data.
@@ -305,6 +305,17 @@ void copy_log_to_last_replica_bg(void *arg)
 
 		wr_id = IBV_WRAPPER_READ_ASYNC(sock, rdma_meta_r,
 					       MR_DRAM_BUFFER, MR_NVM_LOG);
+
+#if defined(EXP_FEATURES) && defined(PREFETCH_FLOW_CONTROL)
+#ifdef FINER_CONTROL
+		// Wait for the write WR completion.
+		IBV_AWAIT_WORK_COMPLETION(sock, flow_id);
+		unlimit_prefetch_rate(c_arg->log_size);
+#endif
+#endif
+	}
+	else {
+		wr_id = flow_id;
 	}
 
 	// Wait for the WR completion.
@@ -312,8 +323,14 @@ void copy_log_to_last_replica_bg(void *arg)
 	IBV_AWAIT_WORK_COMPLETION(sock, wr_id);
 	END_TL_TIMER(evt_copy_log_to_last_wait_wr_compl);
 
-#ifdef EXP_FEATURES
-	unlimit_prefetch_rate(c_arg->log_size);
+#if defined(EXP_FEATURES) && defined(PREFETCH_FLOW_CONTROL)
+	if (mlfs_conf.persist_nvm_with_rdma_read) {
+#ifndef FINER_CONTROL
+		unlimit_prefetch_rate(c_arg->log_size);
+#endif
+		;
+	}
+	else unlimit_prefetch_rate(c_arg->log_size);
 #endif
 
 #ifdef PROFILE_REALTIME_NET_BW_USAGE

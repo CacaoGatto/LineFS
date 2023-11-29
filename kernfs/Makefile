@@ -87,6 +87,8 @@ WITH_SNIC_COMMON_FLAGS += -DBATCH_MEMCPY_LIST
 # WITH_SNIC_COMMON_FLAGS += -DPIPELINE_RATE_LIMIT  # Enable rate limiter in LineFS.
 # WITH_SNIC_COMMON_FLAGS += -DBACKUP_RDMA_MEMCPY # Use RDMA memcpy on Replica1's host failure.
 
+WITH_SNIC_COMMON_FLAGS += -DFINER_FLOW_CONTROL # When persisting log by RDMA read, apply more strict unlimit point after write comp rather than read comp.
+
 ### With NIC offloading. Flags for host.
 WITH_SNIC_HOST_FLAGS = $(WITH_SNIC_COMMON_FLAGS)
 # WITH_SNIC_HOST_FLAGS += -DIOAT_INTERRUPT_KERNEL_MODULE

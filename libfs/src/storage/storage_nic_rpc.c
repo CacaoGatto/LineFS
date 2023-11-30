@@ -36,13 +36,20 @@ void nic_slab_init(uint64_t pool_size)
 	uint8_t *pool_space;
 
 	// Transparent huge page allocation.
+#if 0
+    // Bug fixed. It seems that mmap() does not allocate huge page.
 	pool_space = (uint8_t *)mmap(NULL, pool_size, PROT_READ|PROT_WRITE,
 			MAP_PRIVATE|MAP_ANONYMOUS|MAP_POPULATE, -1, 0);
+#else
+    posix_memalign(&pool_space, 2ull << 20, pool_size);
+#endif
 
 	mlfs_assert(pool_space);
 
+#ifdef NIC_SLAB_HUGE_PAGE
 	if(madvise(pool_space, pool_size, MADV_HUGEPAGE) < 0)
 		panic("cannot do madvise for huge page\n");
+#endif
 
 	nic_slab_pool = (ncx_slab_pool_t *)pool_space;
 	nic_slab_pool->addr = pool_space;

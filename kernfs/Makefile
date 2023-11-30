@@ -88,6 +88,7 @@ WITH_SNIC_COMMON_FLAGS += -DBATCH_MEMCPY_LIST
 # WITH_SNIC_COMMON_FLAGS += -DBACKUP_RDMA_MEMCPY # Use RDMA memcpy on Replica1's host failure.
 
 WITH_SNIC_COMMON_FLAGS += -DFINER_FLOW_CONTROL # When persisting log by RDMA read, apply more strict unlimit point after write comp rather than read comp.
+WITH_SNIC_COMMON_FLAGS += -DNIC_SLAB_HUGE_PAGE # Use huge page for NIC slab.
 
 ### With NIC offloading. Flags for host.
 WITH_SNIC_HOST_FLAGS = $(WITH_SNIC_COMMON_FLAGS)

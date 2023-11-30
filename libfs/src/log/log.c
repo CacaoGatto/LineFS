@@ -575,7 +575,9 @@ static void persist_log_header(struct logheader_meta *loghdr_meta,
 	io_bh->b_data = (uint8_t *)loghdr;
 	io_bh->b_size = sizeof(struct logheader);
 
+#ifndef NO_LOG_WRITE
 	mlfs_write(io_bh);
+#endif
 
 	mlfs_debug("pid %u [log header] inuse %d blkno %lu next_hdr_blockno %lu\n", 
 			getpid(),
@@ -588,7 +590,9 @@ static void persist_log_header(struct logheader_meta *loghdr_meta,
 		io_bh->b_data = loghdr_meta->loghdr_ext;
 		io_bh->b_size = loghdr_meta->ext_used;
 		io_bh->b_offset = sizeof(struct logheader);
+#ifndef NO_LOG_WRITE
 		mlfs_write(io_bh);
+#endif
 	}
 
 	bh_release(io_bh);
@@ -758,7 +762,9 @@ static int persist_log_inode(struct logheader_meta *loghdr_meta, uint32_t idx)
 	mlfs_debug("inum %u offset %lu @ blockno %lu\n",
 				loghdr->inode_no[idx], loghdr->data[idx], logblk_no);
 
+#ifndef NO_LOG_WRITE
 	mlfs_write(log_bh);
+#endif
 
 	bh_release(log_bh);
 
@@ -900,7 +906,9 @@ static int persist_log_file(struct logheader_meta *loghdr_meta,
 		mlfs_debug("inum %u offset %lu @ blockno %lu (partial io_size=%u)\n",
 				loghdr->inode_no[idx], loghdr->data[idx], logblk_no, io_size);
 
+#ifndef NO_LOG_WRITE
 		mlfs_write(log_bh);
+#endif
 
 		bh_release(log_bh);
 
@@ -983,7 +991,9 @@ static int persist_log_file(struct logheader_meta *loghdr_meta,
 		mlfs_debug("inum %u offset %lu size %u @ blockno %lx (aligned)\n",
 				loghdr->inode_no[idx], cur_offset, size, logblk_no);
 
+#ifndef NO_LOG_WRITE
 		mlfs_write(log_bh);
+#endif
 
 		bh_release(log_bh);
 

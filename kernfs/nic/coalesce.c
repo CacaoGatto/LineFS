@@ -126,7 +126,9 @@ void coalesce_log(void *arg)
 	END_TL_TIMER(evt_coalesce_build_loghdrs_arg);
 
 #ifndef NO_PIPELINING
+#ifndef NO_HDR_BUILD
 	thpool_add_work(thpool_loghdr_build, build_loghdr_list, (void *)bl_arg);
+#endif
 #endif
 
 #ifndef SHORT_PATH

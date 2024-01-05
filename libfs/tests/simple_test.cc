@@ -214,10 +214,8 @@ void io_bench::do_write(void)
 
 	random_range = file_size_bytes / io_size;
 
-	if (per_thread_stats) {
-		time_stats_init(&stats, 1);
-		time_stats_start(&stats);
-	}
+	time_stats_init(&stats, 1);
+	time_stats_start(&stats);
 
 	if (test_type == SEQ_WRITE || test_type == SEQ_WRITE_READ) {
 		for (unsigned long i = 0; i < file_size_bytes; i += io_size) {
@@ -284,19 +282,11 @@ void io_bench::do_write(void)
 		    ++op_it;
 		}
     }
+	time_stats_stop(&stats);
 
 	if (do_fsync) {
 		printf("do_sync\n");
 		mlfs_posix_fsync(fd);
-	}
-
-	if (per_thread_stats) {
-		time_stats_stop(&stats);
-
-		time_stats_print(&stats, (char *)"---------------");
-
-		printf("Throughput: %3.3f MB\n",(float)(file_size_bytes)
-				/ (1024.0 * 1024.0 * (float) time_stats_get_avg(&stats)));
 	}
 
 	return ;
@@ -655,6 +645,11 @@ int main(int argc, char *argv[])
 #endif
 
 	time_stats_stop(&total_stats);
+
+	time_stats_print(&io_workers[0]->stats, (char *)"---------------");
+
+	printf("Write throughput: %3.3f MB\n",(float)(file_size_bytes)
+			/ (1024.0 * 1024.0 * (float) time_stats_get_avg(&io_workers[0]->stats)));
 
 	time_stats_print(&main_stats, (char *)"--------------- stats");
 

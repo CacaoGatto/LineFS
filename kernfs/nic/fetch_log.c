@@ -177,6 +177,13 @@ void fetch_log_from_local_nvm_bg(void *arg)
 
 #ifdef PREFETCH_FLOW_CONTROL
 	// Limit prefetch rate to deal with out-of-NIC-memory problem.
+#ifdef SEQN_REORDER_NAIVE
+	while (atomic_load(&rctx->next_host_memcpy_seqn) + 6 <= lf_arg->seqn)
+		cpu_relax();
+#elif defined(SEQN_REORDER_ADVANCED)
+	while (atomic_load(&rctx->coalesce_expect) + 6 <= lf_arg->seqn)
+		cpu_relax();
+#endif
 	limit_prefetch_rate(size);
 #endif
 

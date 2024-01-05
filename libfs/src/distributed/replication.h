@@ -39,8 +39,8 @@ extern threadpool thread_pool_log_prefetch_req; // Used by libfs.
 // TODO insufficient size of circular buffer results in severe performance degradation with CPU saturation.
 // Better implementation would be to introduce semaphore eliminating busy-waiting on circbuf enqueueing.
 // Note that currently, if circbuf is full, build_memcpy_list thread waits until enqueueing succeeds.
-#define CIRC_BUF_HOST_MEMCPY_REQ_SIZE (10*1024*1024)
-#define CIRC_BUF_COPY_DONE_SIZE (10*1024*1024)
+#define CIRC_BUF_HOST_MEMCPY_REQ_SIZE (16*1024*1024)
+#define CIRC_BUF_COPY_DONE_SIZE (16*1024*1024)
 
 //TODO: [refactor] use fs_log struct for peer (too many common elements between peer_metadata & fs_log).
 
@@ -242,6 +242,7 @@ struct memcpy_list_batch_meta {
 	uint32_t n_orig_loghdrs;
 	uint64_t n_orig_blks;
 	int reset_meta;
+	pthread_mutex_t batch_mutex;
 };
 typedef struct memcpy_list_batch_meta memcpy_list_batch_meta_t;
 
@@ -294,6 +295,11 @@ struct replication_context {
 						 * NVM on the second replica.
 						 */
 	uintptr_t libfs_rate_limit_addr;
+
+#ifdef SEQN_REORDER_ADVANCED
+	atomic_ulong coalesce_newest;
+	atomic_ulong coalesce_expect;
+#endif
 
 	threadpool thpool_build_memcpy_list;
 

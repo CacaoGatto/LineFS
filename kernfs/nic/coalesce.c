@@ -86,6 +86,17 @@ void coalesce_log(void *arg)
 	uint32_t n_coalesced_loghdrs;
 	uint64_t coalesced_log_size;
 
+#ifdef SEQN_REORDER_ADVANCED
+	unsigned long newest = atomic_load(&rctx->coalesce_newest);
+	unsigned long expect = atomic_load(&rctx->coalesce_expect);
+	unsigned long seqn = c_arg->seqn;
+	if (seqn > newest) {
+		newest = seqn;
+		atomic_store(&rctx->coalesce_newest, newest);
+	}
+	if (seqn == expect + 1) atomic_store(&rctx->coalesce_expect, newest);
+#endif
+
 	print_coalesce_arg(c_arg);
 
 	validate_log(); // TODO
@@ -126,7 +137,7 @@ void coalesce_log(void *arg)
 	END_TL_TIMER(evt_coalesce_build_loghdrs_arg);
 
 #ifndef NO_PIPELINING
-#ifndef NO_HDR_BUILD
+#ifndef NO_HDR_ALL
 	thpool_add_work(thpool_loghdr_build, build_loghdr_list, (void *)bl_arg);
 #endif
 #endif

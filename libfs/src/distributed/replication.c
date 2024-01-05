@@ -203,6 +203,10 @@ void init_replication(int remote_log_id, struct peer_id *peer, addr_t begin,
 	//g_sync_ctx->peer->base_addr = mr_remote_addr(g_sync_ctx->peer->info->sockfd[SOCK_IO], MR_NVM_LOG);
 
 #ifdef NIC_SIDE
+#ifdef SEQN_REORDER_ADVANCED
+	atomic_init(&g_sync_ctx[idx]->coalesce_newest, 0);
+	atomic_init(&g_sync_ctx[idx]->coalesce_expect, 0);
+#endif
 	// Build memcpy list related.
 	g_sync_ctx[idx]->thpool_build_memcpy_list = init_build_memcpy_list_thpool(idx);
 

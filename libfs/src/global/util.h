@@ -242,7 +242,7 @@ static inline double get_time(struct timespec *time)
 }
 
 struct realtime_bw_stat {
-	uint64_t bytes_until_now;
+	int64_t bytes_until_now;
 	struct timespec start_time;
 	struct timespec end_time;
 	pthread_spinlock_t lock;
@@ -260,7 +260,7 @@ static inline void init_rt_bw_stat(rt_bw_stat *stat, char *name)
 	pthread_spin_init(&stat->lock, PTHREAD_PROCESS_PRIVATE);
 
 #ifdef EXP_FEATURES
-	stat->bytes_until_now = (uint64_t)mlfs_conf.prefetch_data_cap * (1024 * 1024); /* MB to Bytes */
+	stat->bytes_until_now = (int64_t)mlfs_conf.prefetch_data_cap * (1024 * 1024); /* MB to Bytes */
 #endif
 }
 

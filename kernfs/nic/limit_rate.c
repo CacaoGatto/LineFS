@@ -332,6 +332,8 @@ void limit_prefetch_rate(uint64_t sent_bytes)
 
 #else
 
+#if 0
+
 static inline int dec_available_prefetch_bw(rt_bw_stat * stat, uint64_t sent_bytes)
 {
 	int ret = 0;
@@ -357,17 +359,30 @@ static inline void inc_available_prefetch_bw(rt_bw_stat * stat, uint64_t sent_by
 	pthread_spin_unlock(&stat->lock);
 }
 
+#endif
+
 void limit_prefetch_rate(uint64_t sent_bytes)
 {
-	while (!dec_available_prefetch_bw(&prefetch_rt_bw, sent_bytes))
+	while (1)
 	{
-		cpu_relax();
+		int64_t bytes_old = prefetch_rt_bw.bytes_until_now;
+		if (0 >= bytes_old)
+		{
+			cpu_relax();
+			continue;
+		}
+		int64_t bytes_new = bytes_old - sent_bytes;
+		if (__sync_bool_compare_and_swap(&prefetch_rt_bw.bytes_until_now, bytes_old, bytes_new))
+			break;
+
+		/* If CAS fails, we may at once try again optimistically. */
+		// cpu_relax();
 	}
 }
 
 void unlimit_prefetch_rate(uint64_t sent_bytes)
 {
-	inc_available_prefetch_bw(&prefetch_rt_bw, sent_bytes);
+	__sync_fetch_and_add(&prefetch_rt_bw.bytes_until_now, sent_bytes);
 }
 
 #endif // EXP_FEATURES

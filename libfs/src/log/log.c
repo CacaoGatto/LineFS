@@ -226,7 +226,7 @@ void shutdown_log(int id)
 	printf("Wait until we get all acks of issued requests. issued_seqn=%lu "
 	       "acked_seqn=%lu\n",
 	       issued_seqn, atomic_load(&get_next_peer()->recently_acked_seqn));
-#ifdef NO_HDR_BUILD
+#ifndef HDR_INVALID
 	while (issued_seqn !=
 	       atomic_load(&get_next_peer()->recently_acked_seqn)) {
 	}

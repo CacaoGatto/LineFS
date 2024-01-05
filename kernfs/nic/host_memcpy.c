@@ -457,6 +457,22 @@ static int dequeue_host_memcpy_req(struct replication_context *rctx,
 		//             atomic_load(&item->processed), &item->processed,
 		//             item, tail);
 
+		/* NOTE: if enqueue is called in parallel, dequeue might read either bigger or smaller seqn */
+		// Before handling the item, we need to remove all processed items in the tail and relocate the item.
+		while (atomic_load(&item->processed))
+		{
+			tail = (tail + 1) & (CIRC_BUF_HOST_MEMCPY_REQ_SIZE - 1);
+			smp_store_release(&buffer->tail, tail);
+			item = &buffer->buf[tail];
+		}
+
+		// If no item left, return.
+		if (CIRC_CNT(head, tail, CIRC_BUF_HOST_MEMCPY_REQ_SIZE) < 1)
+		{
+			pthread_mutex_unlock(&buffer->consume_mutex);
+			return 0;
+		}
+
 		if (item->seqn == next_seqn) {
 			// We have a proper item at the front of the queue.
 			memcpy(hm_arg, item, sizeof(host_memcpy_arg));
@@ -475,7 +491,7 @@ static int dequeue_host_memcpy_req(struct replication_context *rctx,
 				&buffer->tail,
 				(tail + 1) &
 					(CIRC_BUF_HOST_MEMCPY_REQ_SIZE - 1));
-
+#if 0
 		} else if (item->seqn < next_seqn) {
 			// Item has already been processed.
 			// mlfs_assert(atomic_load(&item->processed)); // FIXME Sometimes this assertion fails.
@@ -509,6 +525,7 @@ static int dequeue_host_memcpy_req(struct replication_context *rctx,
 				&buffer->tail,
 				(tail + 1) &
 					(CIRC_BUF_HOST_MEMCPY_REQ_SIZE - 1));
+#endif
 		} else {
 			// Search for an item with the next seqn.
 			item = search_next_seqn_host_memcpy_item(buffer,
@@ -986,7 +1003,7 @@ void request_host_memcpy(void *arg)
 		if (get_duration(&dequeue_start_time, &dequeue_end_time) >
 		    1.0) {
 			seconds++;
-			mlfs_printf("Waiting for an copy_done_item for "
+			mlfs_printf("Waiting for an memcpy_item for "
 				    "%d seconds. libfs_id=%d "
 				    "rctx->next_seqn=%lu\n",
 				    seconds, libfs_id,
@@ -1035,6 +1052,8 @@ void request_host_memcpy(void *arg)
 	START_TL_TIMER(evt_host_memcpy_req);
 
 #ifdef BATCH_MEMCPY_LIST
+	// pthread_mutex_t * batch_mutex = &rctx->mcpy_list_batch_meta.r_meta->mutex;
+	// pthread_mutex_lock(batch_mutex);
 	if (add_memcpy_list_to_batch(rctx, &hm_arg)) {
 #ifdef BACKUP_RDMA_MEMCPY
 		printf("[Warn] BACKUP RDMA MEMCPY is not implemented with memcpy batching.\n");
@@ -1042,6 +1061,7 @@ void request_host_memcpy(void *arg)
 		// Send request once sge list is full.
 		send_batched_memcpy_req_to_host(rctx);
 	}
+	// pthread_mutex_unlock(batch_mutex);
 #else
 
 #ifdef BACKUP_RDMA_MEMCPY
@@ -1063,7 +1083,9 @@ void request_host_memcpy(void *arg)
 		do_rdma_memcpy(&hm_arg);
 	}
 #else
+#ifndef NO_HDR_UPDATE
 	send_memcpy_req_to_host(&hm_arg);
+#endif
 #endif
 
 #endif

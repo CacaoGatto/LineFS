@@ -75,7 +75,7 @@ struct conn_context
 
 	//determines acquisitions of send buffers
 	int *send_slots;
-	uint8_t send_idx;
+	uint16_t send_idx;
 
 #ifdef MSG_BUFFER_PROFILE
 	uint64_t rcv_buf_posted_cnt;

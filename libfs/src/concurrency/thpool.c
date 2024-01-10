@@ -839,7 +839,7 @@ static void bsem_post(bsem *bsem_p) {
 	START_TL_TIMER(evt_bsem_post_acquire_lock);
 	pthread_mutex_lock(&bsem_p->mutex);
 	END_TL_TIMER(evt_bsem_post_acquire_lock);
-	bsem_p->v = 1;
+	bsem_p->v++;
 	START_TL_TIMER(evt_bsem_post_cond_signal);
 	pthread_cond_signal(&bsem_p->cond);
 	END_TL_TIMER(evt_bsem_post_cond_signal);
@@ -848,37 +848,42 @@ static void bsem_post(bsem *bsem_p) {
 
 static void bsem_post_no_sleep(bsem *bsem_p) {
 	START_TL_TIMER(evt_bsem_post_no_sleep_set_bit);
-	atomic_set_bit(&bsem_p->v, 1);
+	atomic_inc(&bsem_p->v);
 	END_TL_TIMER(evt_bsem_post_no_sleep_set_bit);
 }
 
 /* Post to all threads */
 static void bsem_post_all(bsem *bsem_p) {
 	pthread_mutex_lock(&bsem_p->mutex);
-	bsem_p->v = 1;
+	bsem_p->v++;
 	pthread_cond_broadcast(&bsem_p->cond);
 	pthread_mutex_unlock(&bsem_p->mutex);
 }
 
 static void bsem_post_all_no_sleep(bsem *bsem_p) {
-	atomic_set_bit(&bsem_p->v, 1);
+	atomic_inc(&bsem_p->v);
 }
 
 /* Wait on semaphore until semaphore has value 0 */
 static void bsem_wait(bsem* bsem_p) {
 	pthread_mutex_lock(&bsem_p->mutex);
-	while (bsem_p->v != 1) {
+	while (bsem_p->v == 0) {
 		pthread_cond_wait(&bsem_p->cond, &bsem_p->mutex);
 	}
-	bsem_p->v = 0;
+	bsem_p->v--;
 	pthread_mutex_unlock(&bsem_p->mutex);
 }
 
 /* Wait on semaphore until semaphore has value 0 */
 static void bsem_wait_no_sleep(bsem* bsem_p) {
 	while (1) {
-		if (cmpxchg(&bsem_p->v, 1, 0))
+		int old_v = bsem_p->v;
+		if (old_v == 0) {
+			cpu_relax();
+			continue;
+		}
+		int new_v = old_v - 1;
+		if (cmpxchg(&bsem_p->v, old_v, new_v))
 			break;
-		cpu_relax();
 	}
 }

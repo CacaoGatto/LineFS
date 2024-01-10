@@ -123,6 +123,10 @@ void build_conn_context(struct rdma_cm_id *id, int always_poll)
 	ctx->poll_always = always_poll;
 	ctx->poll_enable = 1;
 
+	ctx->block_cnt = 0;
+	ctx->send_idx = 0;
+	ctx->comp_idx = 0;
+
 	id->context = ctx;
 	ctx->id = id;
 
@@ -1179,6 +1183,18 @@ int _rc_acquire_buffer(int sockfd, void ** ptr, int user)
 	// may get the same buffer ID if MAX_BUFFER is 50.
 	// A simple patch is to set MAX_BUFFER to a large enough power of 2, like 128.
 	pthread_spin_lock(&ctx->acquire_buf_lock);
+	uint16_t inflight = (ctx->send_idx - ctx->comp_idx) & (MAX_BUFFER - 1);
+	while (inflight >= MAX_BUFFER - 1) {
+#if 1
+		ctx->block_cnt++;
+		if (ctx->block_cnt % 1000 == 0)
+			printf("sockfd is blocked %lu times\n", ctx->block_cnt);
+#endif
+		pthread_spin_unlock(&ctx->acquire_buf_lock);
+		ibw_cpu_relax();
+		pthread_spin_lock(&ctx->acquire_buf_lock);
+		inflight = (ctx->send_idx - ctx->comp_idx) & (MAX_BUFFER - 1);
+	}
 	int i = ctx->send_idx++ % MAX_BUFFER;
 	pthread_spin_unlock(&ctx->acquire_buf_lock);
 
@@ -1237,6 +1253,7 @@ int rc_release_buffer(int sockfd, uint32_t wr_id)
 
 	pthread_spin_lock(&ctx->buffer_lock);
 	HASH_FIND(hh, ctx->buffer_bindings, &wr_id, sizeof(wr_id), b);
+	ctx->comp_idx++;
 	if(b) {
 		debug_print("released buffer[%d] --> (SEND WR #%u)\n", b->buff_id, wr_id);
 		HASH_DEL(ctx->buffer_bindings, b);

@@ -1054,6 +1054,7 @@ void request_host_memcpy(void *arg)
 #ifdef BATCH_MEMCPY_LIST
 	// pthread_mutex_t * batch_mutex = &rctx->mcpy_list_batch_meta.r_meta->mutex;
 	// pthread_mutex_lock(batch_mutex);
+#ifndef NO_HDR_UPDATE
 	if (add_memcpy_list_to_batch(rctx, &hm_arg)) {
 #ifdef BACKUP_RDMA_MEMCPY
 		printf("[Warn] BACKUP RDMA MEMCPY is not implemented with memcpy batching.\n");
@@ -1061,6 +1062,7 @@ void request_host_memcpy(void *arg)
 		// Send request once sge list is full.
 		send_batched_memcpy_req_to_host(rctx);
 	}
+#endif
 	// pthread_mutex_unlock(batch_mutex);
 #else
 

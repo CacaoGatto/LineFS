@@ -873,7 +873,11 @@ int digest_file(uint8_t from_dev, uint8_t to_dev, int libfs_id,
 			buf_blk_cnt = 1; // case 1: small size (< 4KB)
 			read_addr = (uintptr_t)(data + offset_in_block);
 			local_addr =
+#ifndef NO_MEM_FREE
 				(uintptr_t)nic_slab_alloc_in_blk(buf_blk_cnt);
+#else
+				(uintptr_t)mlfs_alloc(buf_blk_cnt * g_block_size_bytes);
+#endif
 			write_addr = (uintptr_t)(
 				(addr_t)g_bdev[to_dev]->map_base_addr +
 				(map.m_pblk << g_block_size_shift) +
@@ -1015,7 +1019,11 @@ int digest_file(uint8_t from_dev, uint8_t to_dev, int libfs_id,
 			buf_blk_cnt = nr_block_get; // case 2: multiple blocks.
 			read_addr = (uintptr_t)data; // offset = 0
 			local_addr =
+#ifndef NO_MEM_FREE
 				(uintptr_t)nic_slab_alloc_in_blk(buf_blk_cnt);
+#else
+				(uintptr_t)mlfs_alloc(buf_blk_cnt * g_block_size_bytes);
+#endif
 			write_addr = (uintptr_t)(
 				(addr_t)g_bdev[to_dev]->map_base_addr +
 				(map.m_pblk << g_block_size_shift)); // offset =

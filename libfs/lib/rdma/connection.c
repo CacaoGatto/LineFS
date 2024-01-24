@@ -1185,7 +1185,7 @@ int _rc_acquire_buffer(int sockfd, void ** ptr, int user)
 	pthread_spin_lock(&ctx->acquire_buf_lock);
 	uint16_t inflight = (ctx->send_idx - ctx->comp_idx) & (MAX_BUFFER - 1);
 	while (inflight >= MAX_BUFFER - 1) {
-#if 1
+#if 0
 		ctx->block_cnt++;
 		if (ctx->block_cnt % 1000 == 0)
 			printf("sockfd is blocked %lu times\n", ctx->block_cnt);

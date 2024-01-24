@@ -23,7 +23,7 @@ export NUMA_NODE=0		# CPU core binding.
 export DIGEST_OPT_HOST_MEMCPY=1
 export DIGEST_OPT_PARALLEL_RDMA_MEMCPY=0
 export LOG_PREFETCHING=1
-export LOG_PREFETCH_THRESHOLD=180
+export LOG_PREFETCH_THRESHOLD=159
 export M_TO_N_REP_THREAD=0
 export NIC_SLAB_THRESHOLD_HIGH=60
 export NIC_SLAB_THRESHOLD_LOW=50
@@ -53,13 +53,13 @@ export THREAD_NUM_COMPRESS=8
 export THREAD_NUM_LOG_FETCH=2 # Primary to Replica 1
 export THREAD_NUM_FSYNC=1
 export THREAD_NUM_COPY_LOG_TO_LOCAL_NVM=2
-export THREAD_NUM_COPY_LOG_TO_LAST_REPLICA=6
+export THREAD_NUM_COPY_LOG_TO_LAST_REPLICA=4
 export THREAD_NUM_PERSIST_LOG=4 # clflush
 export THREAD_NUM_END_PIPELINE=2
 
 # Parameters.
 export REQUEST_RATE_LIMIT_THRESHOLD=500
-export PREFETCH_DATA_CAP=4	# Prefetch data cap in MB.
+export PREFETCH_DATA_CAP=2	# Prefetch data cap in MB.
 
 # For experiment
 export X86_SIGNAL_PATH='/home/yxy/LineFS/scripts/signals' # Signal path in X86 host. It should be the same as $PROJ_DIR(in global.sh)/scripts/signals.

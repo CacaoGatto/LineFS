@@ -211,7 +211,9 @@ void shutdown_log(int id)
 	remains = atomic_load(&g_fs_log[dev]->log_sb->n_digest);
 	if (remains) {
 		printf("Publishing remaining log data. n_loghdr=%u\n", remains);
+#ifndef HDR_INVALID
 		replicate_log_by_fsync();
+#endif
 	}
 
 #ifdef BATCH_MEMCPY_LIST

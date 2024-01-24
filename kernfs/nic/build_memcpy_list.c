@@ -218,9 +218,13 @@ void build_memcpy_list(void *arg)
 
 		// Dynamically allocated buffer. Efficient memory usage but high
 		// latency.  It is freed after host memcpy is done.
+#ifndef NO_MEM_FREE
 		memcpy_meta_list->buf = (memcpy_meta_t *)nic_slab_alloc_in_byte(
 			sizeof(memcpy_meta_t) * digest_blk_cnt);
-
+#else
+		memcpy_meta_list->buf = (memcpy_meta_t *)mlfs_alloc(
+			sizeof(memcpy_meta_t) * digest_blk_cnt);
+#endif
 		// Buffer is allocated at initial time. Low latency but
 		// inefficient memory usage.
 		// mlfs_assert(digest_blk_cnt <= MAX_NUM_LOGHDRS_IN_LOG);
@@ -265,6 +269,17 @@ void build_memcpy_list(void *arg)
 	// Add new thread job: host_memcpy_request.
 	thpool_add_work(rctx->thpool_host_memcpy_req, request_host_memcpy,
 			(void *)rctx);
+
+#if 0
+#ifndef NO_MEM_FREE
+	nic_slab_free((void *)memcpy_meta_list->buf);
+	nic_slab_free(hm_arg.loghdr_buf);
+	nic_slab_free(hm_arg.fetch_loghdr_done_p);
+#else
+	mlfs_free((void *)memcpy_meta_list->buf);
+	mlfs_free(hm_arg.loghdr_buf);
+	mlfs_free(hm_arg.fetch_loghdr_done_p);
+#endif
 #endif
 
 	mlfs_assert(n_loghdr_digested == digest_loghdr_cnt);

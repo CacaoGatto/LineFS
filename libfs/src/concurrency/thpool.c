@@ -746,13 +746,13 @@ static void jobqueue_push(jobqueue* jobqueue_p, struct job* newjob, int no_sleep
 
 	}
 	jobqueue_p->len++;
-
+#if 0
 	if (jobqueue_p->len > 10000) {
-		printf("%lu WARN More than 1000 jobs in jobqueue. jobqueue "
+		printf("%lu WARN More than 10000 jobs in jobqueue. jobqueue "
 		       "length=%d\n",
 		       get_tid(), jobqueue_p->len);
 	}
-
+#endif
 	END_TL_TIMER(evt_jobqueue_push_add);
 	START_TL_TIMER(evt_jobqueue_push_bsem_post);
 	if (no_sleep)
@@ -789,11 +789,13 @@ static struct job* jobqueue_pull(jobqueue* jobqueue_p, int no_sleep){
 					jobqueue_p->len--;
 					/* more than one job in queue -> post it */
 					// START_TL_TIMER(evt_jobqueue_pull_bsem_post);
+#if 0
 					if (no_sleep)
 						bsem_post_no_sleep(
 							jobqueue_p->has_jobs);
 					else
 						bsem_post(jobqueue_p->has_jobs);
+#endif
 					// END_TL_TIMER(evt_jobqueue_pull_bsem_post);
 
 	}

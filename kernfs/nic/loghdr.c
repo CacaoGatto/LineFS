@@ -60,8 +60,13 @@ void build_loghdr_list(void *arg)
 		   "log_size=%lu(%lu)", rctx->peer->id,
 		   loghdr_p, log_size, log_size >> g_block_size_shift);
 
+#ifndef NO_MEM_FREE
 	loghdr_buf = (struct logheader *)nic_slab_alloc_in_byte(
 		sizeof(struct logheader) * bl_arg->n_loghdrs);
+#else
+	loghdr_buf = (struct logheader *)mlfs_alloc(
+		sizeof(struct logheader) * bl_arg->n_loghdrs);
+#endif
 #ifdef CHECK_LOGHDR_LIST
 	// zeroing buffer.
 	memset(loghdr_buf, -1, sizeof(struct logheader) * bl_arg->n_loghdrs);
@@ -143,7 +148,11 @@ void build_loghdr_list(void *arg)
 
 	// Allocate loghdr_buf flag to free buffer asynchronously.
 	uint64_t *fetch_loghdr_done_p =
+#ifndef NO_MEM_FREE
 		(uint64_t *)nic_slab_alloc_in_byte(sizeof(uint64_t));
+#else
+		(uint64_t *)mlfs_alloc(sizeof(uint64_t));
+#endif
 #ifdef NO_HDR_COPY
 	*fetch_loghdr_done_p = 1;
 #else
@@ -198,8 +207,13 @@ void build_loghdr_list(void *arg)
 	END_TL_TIMER(evt_build_loghdr);
 #endif
 #ifdef NO_HDR_DIGEST
+#ifndef NO_MEM_FREE
 	nic_slab_free(bm_arg->fetch_loghdr_done_p);
 	nic_slab_free(bm_arg->loghdr_buf);
+#else
+	mlfs_free(bm_arg->fetch_loghdr_done_p);
+	mlfs_free(bm_arg->loghdr_buf);
+#endif
 	mlfs_free(bm_arg);
 #endif
 	mlfs_free(arg);

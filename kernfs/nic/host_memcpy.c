@@ -276,11 +276,14 @@ static void end_pipeline(void *arg)
 
 	pr_pipe("Freeing loghdr_buf=%p libfs_id=%d seqn=%lu",
 		    pe_arg->loghdr_buf, pe_arg->libfs_id, pe_arg->seqn);
-
+#ifndef NO_MEM_FREE
 	nic_slab_free(pe_arg->loghdr_buf);
 	// Free flag.
 	nic_slab_free(pe_arg->fetch_loghdr_done_p);
-
+#else
+	mlfs_free(pe_arg->loghdr_buf);
+	mlfs_free(pe_arg->fetch_loghdr_done_p);
+#endif
 	//// Free log buffer.
 	if (is_first_kernfs(pe_arg->libfs_id, g_kernfs_id)) {
 
@@ -314,10 +317,20 @@ static void end_pipeline(void *arg)
 #endif
 		pr_pipe("Freeing log_buf=%p libfs_id=%d seqn=%lu",
 			    pe_arg->log_buf, pe_arg->libfs_id, pe_arg->seqn);
-		nic_slab_free(pe_arg->log_buf);
 
+#ifndef NO_MEM_FREE
+#ifndef SETTLED_LOG_BUF
+		nic_slab_free(pe_arg->log_buf);
+#endif
 		// Free flag.
 		nic_slab_free(pe_arg->fetch_log_done_p);
+#else  // NO_MEM_FREE
+#ifndef SETTLED_LOG_BUF
+		mlfs_free(pe_arg->log_buf);
+#endif
+		mlfs_free(pe_arg->fetch_log_done_p);
+#endif
+
 	}
 
 	mlfs_free(arg);
@@ -462,9 +475,9 @@ static int dequeue_host_memcpy_req(struct replication_context *rctx,
 		while (atomic_load(&item->processed))
 		{
 			tail = (tail + 1) & (CIRC_BUF_HOST_MEMCPY_REQ_SIZE - 1);
-			smp_store_release(&buffer->tail, tail);
 			item = &buffer->buf[tail];
 		}
+		smp_store_release(&buffer->tail, tail);
 
 		// If no item left, return.
 		if (CIRC_CNT(head, tail, CIRC_BUF_HOST_MEMCPY_REQ_SIZE) < 1)

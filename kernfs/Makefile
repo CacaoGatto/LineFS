@@ -98,6 +98,9 @@ WITH_SNIC_COMMON_FLAGS += -DNO_HDR_ALL # Disable all loghdrs operations on NIC. 
 # WITH_SNIC_COMMON_FLAGS += -DSEQN_REORDER_NAIVE # Naive strategy to avoid 6 continuous unordered seqn
 WITH_SNIC_COMMON_FLAGS += -DSEQN_REORDER_ADVANCED # Advanced strategy to avoid 6 continuous unordered seqn
 
+# WITH_SNIC_COMMON_FLAGS += -DNO_MEM_FREE # Disable memory free on NIC. It is used for debugging.
+# WITH_SNIC_COMMON_FLAGS += -DSETTLED_LOG_BUF  # Settled log buffer on NIC. It is used for debugging.
+
 ### With NIC offloading. Flags for host.
 WITH_SNIC_HOST_FLAGS = $(WITH_SNIC_COMMON_FLAGS)
 # WITH_SNIC_HOST_FLAGS += -DIOAT_INTERRUPT_KERNEL_MODULE

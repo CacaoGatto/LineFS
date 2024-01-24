@@ -113,7 +113,11 @@ void coalesce_log(void *arg)
 	coalesced_log_size = c_arg->log_size;
 
 	// Allocate log_buf flag to free buffer asynchronously.
+#ifndef NO_MEM_FREE
 	fetch_log_done_p = (uint64_t *)nic_slab_alloc_in_byte(sizeof(uint64_t));
+#else
+	fetch_log_done_p = (uint64_t *)mlfs_alloc(sizeof(uint64_t));
+#endif
 	*fetch_log_done_p = 0;
 
 	// Next pipeline stage.

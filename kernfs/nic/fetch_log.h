@@ -43,6 +43,9 @@ threadpool init_log_fetch_from_local_nvm_thpool(void);
 threadpool init_log_fetch_from_primary_nic_dram_thpool(void);
 threadpool init_fsync_thpool(void);
 
+extern volatile uint64_t first_seqn;
+extern volatile int log_fetcher_ready;
+
 // deprecated.
 //uint64_t read_log(int libfs_id, uintptr_t local_addr,
 //		  uintptr_t remote_base_addr, addr_t start_blknr,

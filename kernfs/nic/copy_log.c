@@ -96,7 +96,7 @@ threadpool init_copy_done_ack_handle_thpool(void)
 	return thpool_handle_copy_done_ack;
 }
 
-static int manage_fsync_ack_th_num = 2;
+static int manage_fsync_ack_th_num = 3;
 threadpool init_manage_fsync_ack_thpool(int libfs_id)
 {
 	int th_num = manage_fsync_ack_th_num; // We required at least 2 threads:
@@ -323,6 +323,15 @@ void copy_log_to_last_replica_bg(void *arg)
 	IBV_AWAIT_WORK_COMPLETION(sock, wr_id);
 	END_TL_TIMER(evt_copy_log_to_last_wait_wr_compl);
 
+	// Free log buffer.
+#ifndef SETTLED_LOG_BUF
+	nic_slab_free(c_arg->log_buf);
+	nic_slab_free(c_arg->copy_log_done_p);
+#else
+	free_settled_log_buf(c_arg->log_buf);
+	free_settled_log_buf_flag(c_arg->copy_log_done_p);
+#endif
+
 #if defined(EXP_FEATURES) && defined(PREFETCH_FLOW_CONTROL)
 	if (mlfs_conf.persist_nvm_with_rdma_read) {
 #ifndef FINER_CONTROL
@@ -392,12 +401,11 @@ void copy_log_to_last_replica_bg(void *arg)
 					   rctx->next_digest_sockfd);
 
 #ifdef SHORT_PATH
-
+#ifndef SETTLED_LOG_BUF
 	uint64_t * fetch_log_done_p = (uint64_t *) c_arg->copy_log_done_p;
 	*fetch_log_done_p = 1;
-
+#endif
 	END_TL_TIMER(evt_copy_to_last_replica);
-
 #else
 
 	// Next pipeline stage 4: Release log buffer.

@@ -1665,6 +1665,10 @@ log_prefetch : {
 	       &lf_arg->libfs_base_addr, &lf_arg->reset_meta, &lf_arg->fsync,
 	       &lf_arg->fsync_ack_addr);
 
+	if (!first_seqn) {
+		first_seqn = lf_arg->seqn;
+	}
+
 	// Prefetch log in background.
 	thpool_add_work(thread_pool_log_prefetch, fetch_log_from_local_nvm_bg,
 			(void *)lf_arg);

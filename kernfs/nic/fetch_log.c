@@ -17,6 +17,9 @@ threadpool thpool_coalesce;
 threadpool thpool_copy_to_local_nvm;
 threadpool thpool_copy_to_last_replica;
 
+volatile uint64_t first_seqn;
+volatile int log_fetcher_ready;
+
 TL_EVENT_TIMER(evt_fetch_from_local_nvm);
 TL_EVENT_TIMER(evt_fetch_from_primary_nic);
 TL_EVENT_TIMER(evt_read_log_from_primary);
@@ -41,6 +44,9 @@ threadpool init_log_fetch_from_local_nvm_thpool(void)
 
 	// Init threadpool of the next pipeline stage.
 	thpool_coalesce = init_coalesce_thpool();
+
+	first_seqn = 0;
+	log_fetcher_ready = 0;
 
 #ifdef PROFILE_REALTIME_FETCH_LOG_FROM_LOCAL
 	init_rt_bw_stat(&fetch_log_from_local_bw_stat, "fetch_log_from_local");
@@ -187,7 +193,11 @@ void fetch_log_from_local_nvm_bg(void *arg)
 	limit_prefetch_rate(size);
 #endif
 
+#ifndef SETTLED_LOG_BUF
 	log_buf = (char *)nic_slab_alloc_in_byte(size); // alloc MR to replicate
+#else
+	log_buf = alloc_settled_log_buf();
+#endif
 
 	n_blks_read = read_log_from_local_nvm(libfs_id, (uintptr_t)log_buf,
 					      remote_addr, size);
@@ -217,6 +227,12 @@ void fetch_log_from_local_nvm_bg(void *arg)
 	c_arg->fsync = lf_arg->fsync;
 	c_arg->fsync_ack_addr = lf_arg->fsync_ack_addr;
 
+	while (!log_fetcher_ready) {
+		if (lf_arg->seqn == first_seqn) {
+			break;
+		}
+	}
+
 #ifdef NO_PIPELINING
 	END_TL_TIMER(evt_fetch_from_local_nvm);
 	coalesce_log((void *) c_arg);
@@ -231,6 +247,9 @@ void fetch_log_from_local_nvm_bg(void *arg)
 	}
 #endif
 
+	if (!log_fetcher_ready) {
+		log_fetcher_ready = 1;
+	}
 	mlfs_free(arg);
 }
 

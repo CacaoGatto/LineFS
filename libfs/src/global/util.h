@@ -247,6 +247,10 @@ struct realtime_bw_stat {
 	struct timespec end_time;
 	pthread_spinlock_t lock;
 	char *name;
+#ifdef EXP_FEATURES
+	int prefetch_data_cap;
+	int log_prefetch_threshold;
+#endif
 };
 typedef struct realtime_bw_stat rt_bw_stat;
 
@@ -260,7 +264,8 @@ static inline void init_rt_bw_stat(rt_bw_stat *stat, char *name)
 	pthread_spin_init(&stat->lock, PTHREAD_PROCESS_PRIVATE);
 
 #ifdef EXP_FEATURES
-	stat->bytes_until_now = (int64_t)mlfs_conf.prefetch_data_cap * (1024 * 1024); /* MB to Bytes */
+	stat->prefetch_data_cap = mlfs_conf.prefetch_data_cap;
+	stat->log_prefetch_threshold = mlfs_conf.log_prefetch_threshold;
 #endif
 }
 

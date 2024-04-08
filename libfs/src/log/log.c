@@ -212,6 +212,7 @@ void shutdown_log(int id)
 	if (remains) {
 		printf("Publishing remaining log data. n_loghdr=%u\n", remains);
 #ifndef HDR_INVALID
+		sleep(5);  // To prevent deadlock
 		replicate_log_by_fsync();
 #endif
 	}
@@ -239,7 +240,7 @@ void shutdown_log(int id)
 
 	// FIXME: Do we need to wait? Sleeping here makes filebench hang at the
 	// end of the execution.
-	// sleep(2); // Wait a while for not completed fetch requests.
+	sleep(2); // Wait a while for not completed fetch requests.
 	return;
 #endif
 

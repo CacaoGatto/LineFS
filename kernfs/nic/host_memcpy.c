@@ -318,17 +318,16 @@ static void end_pipeline(void *arg)
 		pr_pipe("Freeing log_buf=%p libfs_id=%d seqn=%lu",
 			    pe_arg->log_buf, pe_arg->libfs_id, pe_arg->seqn);
 
-#ifndef NO_MEM_FREE
 #ifndef SETTLED_LOG_BUF
+
+#ifndef NO_MEM_FREE
 		nic_slab_free(pe_arg->log_buf);
-#endif
-		// Free flag.
 		nic_slab_free(pe_arg->fetch_log_done_p);
 #else  // NO_MEM_FREE
-#ifndef SETTLED_LOG_BUF
 		mlfs_free(pe_arg->log_buf);
-#endif
 		mlfs_free(pe_arg->fetch_log_done_p);
+#endif
+
 #endif
 
 	}

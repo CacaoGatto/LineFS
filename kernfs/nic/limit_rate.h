@@ -27,4 +27,12 @@ void limit_prefetch_rate(uint64_t sent_bytes);
 #ifdef EXP_FEATURES
 void unlimit_prefetch_rate(uint64_t sent_bytes);
 #endif
+
+#ifdef SETTLED_LOG_BUF
+char *alloc_settled_log_buf();
+void free_settled_log_buf(char *buf);
+uint64_t *alloc_settled_log_buf_flag();
+void free_settled_log_buf_flag(uint64_t *flag);
+#endif
+
 #endif

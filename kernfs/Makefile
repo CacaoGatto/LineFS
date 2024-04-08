@@ -90,7 +90,7 @@ WITH_SNIC_COMMON_FLAGS += -DPREFETCH_FLOW_CONTROL # To prevent from running out 
 WITH_SNIC_COMMON_FLAGS += -DFINER_FLOW_CONTROL # When persisting log by RDMA read, apply more strict unlimit point after write comp rather than read comp.
 # WITH_SNIC_COMMON_FLAGS += -DNIC_SLAB_HUGE_PAGE # Use huge page for NIC slab.
 
-WITH_SNIC_COMMON_FLAGS += -DNO_HDR_ALL # Disable all loghdrs operations on NIC. It is used for debugging.
+# WITH_SNIC_COMMON_FLAGS += -DNO_HDR_ALL # Disable all loghdrs operations on NIC. It is used for debugging.
 # WITH_SNIC_COMMON_FLAGS += -DNO_HDR_DIGEST # Disable digest and later operations for loghdrs on NIC. It is used for debugging.
 # WITH_SNIC_COMMON_FLAGS += -DNO_HDR_UPDATE # Disable updating loghdrs towards the host on NIC. It is used for debugging.
 # WITH_SNIC_COMMON_FLAGS += -DNO_HDR_COPY  # Disable reading loghdrs on second NIC. It is used for debugging.
@@ -99,7 +99,7 @@ WITH_SNIC_COMMON_FLAGS += -DNO_HDR_ALL # Disable all loghdrs operations on NIC. 
 WITH_SNIC_COMMON_FLAGS += -DSEQN_REORDER_ADVANCED # Advanced strategy to avoid 6 continuous unordered seqn
 
 # WITH_SNIC_COMMON_FLAGS += -DNO_MEM_FREE # Disable memory free on NIC. It is used for debugging.
-# WITH_SNIC_COMMON_FLAGS += -DSETTLED_LOG_BUF  # Settled log buffer on NIC. It is used for debugging.
+WITH_SNIC_COMMON_FLAGS += -DSETTLED_LOG_BUF  # Settled log buffer on NIC. It is used for debugging.
 
 ### With NIC offloading. Flags for host.
 WITH_SNIC_HOST_FLAGS = $(WITH_SNIC_COMMON_FLAGS)

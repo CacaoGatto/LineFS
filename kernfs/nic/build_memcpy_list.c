@@ -281,6 +281,7 @@ void build_memcpy_list(void *arg)
 	mlfs_free(hm_arg.fetch_loghdr_done_p);
 #endif
 #endif
+#endif
 
 	mlfs_assert(n_loghdr_digested == digest_loghdr_cnt);
 

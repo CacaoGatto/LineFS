@@ -9,9 +9,42 @@ atomic_uint rate_limit_on;
 uint64_t *primary_rate_limit_flag;
 uint64_t primary_rate_limit_addr = 0;
 
+#ifdef EXP_FEATURES
+
+int64_t available_bw;
+
+#ifdef SETTLED_LOG_BUF
+struct settled_conf_t {
+	void *buf;
+	uint64_t valid;
+	uint64_t padding[6];
+};
+struct settled_conf_t *settled_buf;
+struct settled_conf_t *settled_flag;
+int n_settled_conf;
+#endif
+
+#endif
+
 void init_prefetch_rate_limiter(void)
 {
 	init_rt_bw_stat(&prefetch_rt_bw, "prefetch");
+#ifdef EXP_FEATURES
+	available_bw = (int64_t)prefetch_rt_bw.prefetch_data_cap * (1024 * 1024); // MB to Bytes
+#ifdef SETTLED_LOG_BUF
+	int available_blk = prefetch_rt_bw.prefetch_data_cap * 256;  // 4KB block
+	n_settled_conf = available_blk / prefetch_rt_bw.log_prefetch_threshold + 1;
+	settled_buf = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
+	settled_flag = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
+	for (int i = 0; i < n_settled_conf; i++) {
+		settled_buf[i].buf = (char *)nic_slab_alloc_in_blk(prefetch_rt_bw.log_prefetch_threshold + 5);
+		settled_buf[i].valid = 0;
+		settled_flag[i].buf = (char *)nic_slab_alloc_in_byte(sizeof(uint64_t));
+		settled_flag[i].valid = 0;
+	}
+#endif
+#endif
+	return;
 }
 
 void init_rate_limiter(void)
@@ -365,24 +398,74 @@ void limit_prefetch_rate(uint64_t sent_bytes)
 {
 	while (1)
 	{
-		int64_t bytes_old = prefetch_rt_bw.bytes_until_now;
+		int64_t bytes_old = available_bw;
 		if (0 >= bytes_old)
 		{
 			cpu_relax();
 			continue;
 		}
 		int64_t bytes_new = bytes_old - sent_bytes;
-		if (__sync_bool_compare_and_swap(&prefetch_rt_bw.bytes_until_now, bytes_old, bytes_new))
+		if (__sync_bool_compare_and_swap(&available_bw, bytes_old, bytes_new))
 			break;
 
 		/* If CAS fails, we may at once try again optimistically. */
 		// cpu_relax();
 	}
+	return;
 }
 
 void unlimit_prefetch_rate(uint64_t sent_bytes)
 {
-	__sync_fetch_and_add(&prefetch_rt_bw.bytes_until_now, sent_bytes);
+	__sync_fetch_and_add(&available_bw, sent_bytes);
+	return;
 }
+
+#ifdef SETTLED_LOG_BUF
+
+char *alloc_settled_log_buf() {
+	while (1) {
+		for (int i = 0; i < n_settled_conf; i++) {
+			volatile uint64_t *flag = &settled_buf[i].valid;
+			if (!*flag) {
+				if (__sync_bool_compare_and_swap(flag, 0, 2)) {
+					return settled_buf[i].buf;
+				}
+			}
+		}
+	}
+}
+
+void free_settled_log_buf(char *buf) {
+	for (int i = 0; i < n_settled_conf; i++) {
+		if (settled_buf[i].buf == (void *)buf) {
+			__sync_fetch_and_sub(&settled_buf[i].valid, 1);
+			return;
+		}
+	}
+}
+
+uint64_t *alloc_settled_log_buf_flag() {
+	while (1) {
+		for (int i = 0; i < n_settled_conf; i++) {
+			volatile uint64_t *flag = &settled_flag[i].valid;
+			if (!*flag) {
+				if (__sync_bool_compare_and_swap(flag, 0, 1)) {
+					return (uint64_t *)settled_flag[i].buf;
+				}
+			}
+		}
+	}
+}
+
+void free_settled_log_buf_flag(uint64_t *flag) {
+	for (int i = 0; i < n_settled_conf; i++) {
+		if (settled_flag[i].buf == (void *)flag) {
+			settled_flag[i].valid = 0;
+			return;
+		}
+	}
+}
+
+#endif // SETTLED_LOG_BUF
 
 #endif // EXP_FEATURES

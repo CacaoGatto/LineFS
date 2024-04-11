@@ -324,12 +324,21 @@ void copy_log_to_last_replica_bg(void *arg)
 	END_TL_TIMER(evt_copy_log_to_last_wait_wr_compl);
 
 	// Free log buffer.
-#ifndef SETTLED_LOG_BUF
-	nic_slab_free(c_arg->log_buf);
-	nic_slab_free(c_arg->copy_log_done_p);
-#else
+#ifdef NO_HDR_ALL  // If NO_HDR_ALL, log buffer is freed here.
+#ifdef SETTLED_LOG_BUF
 	free_settled_log_buf(c_arg->log_buf);
 	free_settled_log_buf_flag(c_arg->copy_log_done_p);
+#else
+	nic_slab_free(c_arg->log_buf);
+#ifdef NO_MEM_FREE
+	mlfs_free(c_arg->copy_log_done_p);
+#else
+	nic_slab_free(c_arg->copy_log_done_p);
+#endif
+#endif
+#else  // Otherwise, inspire another thread to free log buffer.
+	uint64_t * fetch_log_done_p = (uint64_t *) c_arg->copy_log_done_p;
+	*fetch_log_done_p = 1;
 #endif
 
 #if defined(EXP_FEATURES) && defined(PREFETCH_FLOW_CONTROL)
@@ -401,10 +410,6 @@ void copy_log_to_last_replica_bg(void *arg)
 					   rctx->next_digest_sockfd);
 
 #ifdef SHORT_PATH
-#ifndef SETTLED_LOG_BUF
-	uint64_t * fetch_log_done_p = (uint64_t *) c_arg->copy_log_done_p;
-	*fetch_log_done_p = 1;
-#endif
 	END_TL_TIMER(evt_copy_to_last_replica);
 #else
 

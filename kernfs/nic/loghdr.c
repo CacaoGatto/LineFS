@@ -191,10 +191,8 @@ void build_loghdr_list(void *arg)
 
 	build_memcpy_list((void *)bm_arg);
 #else
-#ifndef NO_HDR_DIGEST
 	thpool_add_work(rctx->thpool_build_memcpy_list, build_memcpy_list,
 			(void *)bm_arg);
-#endif
 
 #ifndef NO_HDR_COPY
 	// 2. Send an RPC to replica 1.
@@ -206,16 +204,7 @@ void build_loghdr_list(void *arg)
 
 	END_TL_TIMER(evt_build_loghdr);
 #endif
-#ifdef NO_HDR_DIGEST
-#ifndef NO_MEM_FREE
-	nic_slab_free(bm_arg->fetch_loghdr_done_p);
-	nic_slab_free(bm_arg->loghdr_buf);
-#else
-	mlfs_free(bm_arg->fetch_loghdr_done_p);
-	mlfs_free(bm_arg->loghdr_buf);
-#endif
-	mlfs_free(bm_arg);
-#endif
+
 	mlfs_free(arg);
 }
 

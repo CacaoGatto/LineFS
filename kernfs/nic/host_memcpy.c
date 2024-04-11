@@ -278,13 +278,14 @@ static void end_pipeline(void *arg)
 		    pe_arg->loghdr_buf, pe_arg->libfs_id, pe_arg->seqn);
 #ifndef NO_MEM_FREE
 	nic_slab_free(pe_arg->loghdr_buf);
-	// Free flag.
 	nic_slab_free(pe_arg->fetch_loghdr_done_p);
 #else
 	mlfs_free(pe_arg->loghdr_buf);
 	mlfs_free(pe_arg->fetch_loghdr_done_p);
 #endif
 	//// Free log buffer.
+	// Not needed now
+#if 0
 	if (is_first_kernfs(pe_arg->libfs_id, g_kernfs_id)) {
 
 		// Wait until flag is set to 1 by the next replica.
@@ -318,19 +319,20 @@ static void end_pipeline(void *arg)
 		pr_pipe("Freeing log_buf=%p libfs_id=%d seqn=%lu",
 			    pe_arg->log_buf, pe_arg->libfs_id, pe_arg->seqn);
 
-#ifndef SETTLED_LOG_BUF
-
-#ifndef NO_MEM_FREE
-		nic_slab_free(pe_arg->log_buf);
-		nic_slab_free(pe_arg->fetch_log_done_p);
-#else  // NO_MEM_FREE
-		mlfs_free(pe_arg->log_buf);
-		mlfs_free(pe_arg->fetch_log_done_p);
+#ifdef SETTLED_LOG_BUF
+	free_settled_log_buf(bm_arg->log_buf);
+	free_settled_log_buf_flag(bm_arg->copy_log_done_p);
+#else
+	nic_slab_free(bm_arg->log_buf);
+#ifdef NO_MEM_FREE
+	mlfs_free(bm_arg->copy_log_done_p);
+#else
+	nic_slab_free(bm_arg->copy_log_done_p);
 #endif
-
 #endif
 
 	}
+#endif
 
 	mlfs_free(arg);
 

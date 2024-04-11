@@ -176,6 +176,34 @@ void build_memcpy_list(void *arg)
 
 	print_build_memcpy_list_arg(bm_arg);
 
+	// Wait until fetch log is done.
+	while (!(*bm_arg->fetch_log_done_p)) cpu_relax();
+#ifdef SETTLED_LOG_BUF
+	free_settled_log_buf(bm_arg->log_buf);
+	free_settled_log_buf_flag(bm_arg->copy_log_done_p);
+#else
+	nic_slab_free(bm_arg->log_buf);
+#ifdef NO_MEM_FREE
+	mlfs_free(bm_arg->copy_log_done_p);
+#else
+	nic_slab_free(bm_arg->copy_log_done_p);
+#endif
+#endif
+
+#ifdef NO_HDR_DIGEST
+	// Wait until fetch loghdr is done.
+	while (!(*bm_arg->fetch_loghdr_done_p)) cpu_relax();
+#ifndef NO_MEM_FREE
+	nic_slab_free(bm_arg->fetch_loghdr_done_p);
+	nic_slab_free(bm_arg->loghdr_buf);
+#else
+	mlfs_free(bm_arg->fetch_loghdr_done_p);
+	mlfs_free(bm_arg->loghdr_buf);
+#endif
+
+	mlfs_free(bm_arg);
+	return;
+#endif
 
 	// TO be deleted.
 	dev_id = g_log_dev; // all logs have dev_id == 4

@@ -1130,6 +1130,7 @@ static void send_log_prefetch_request(addr_t prefetch_start_blknr,
 
 	if (is_fsync) {
 		// Send in the same thread.
+		thpool_wait(thread_pool_log_prefetch_req);  // The fsync must be sent in order.
 		send_log_prefetch_msg((void *)pf_arg);
 	} else {
 		// Send in another thread.

@@ -11,7 +11,7 @@ uint64_t primary_rate_limit_addr = 0;
 
 #ifdef EXP_FEATURES
 
-int64_t available_bw;
+volatile int64_t available_bw;
 
 #ifdef SETTLED_LOG_BUF
 struct settled_conf_t {
@@ -37,7 +37,7 @@ void init_prefetch_rate_limiter(void)
 	settled_buf = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
 	settled_flag = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
 	for (int i = 0; i < n_settled_conf; i++) {
-		settled_buf[i].buf = (char *)nic_slab_alloc_in_blk(prefetch_rt_bw.log_prefetch_threshold + 5);
+		settled_buf[i].buf = (char *)nic_slab_alloc_in_blk(prefetch_rt_bw.log_prefetch_threshold + 3);
 		settled_buf[i].valid = 0;
 		settled_flag[i].buf = (char *)nic_slab_alloc_in_byte(sizeof(uint64_t));
 		settled_flag[i].valid = 0;
@@ -427,7 +427,7 @@ char *alloc_settled_log_buf() {
 		for (int i = 0; i < n_settled_conf; i++) {
 			volatile uint64_t *flag = &settled_buf[i].valid;
 			if (!*flag) {
-				if (__sync_bool_compare_and_swap(flag, 0, 2)) {
+				if (__sync_bool_compare_and_swap(flag, 0, 1)) {
 					return settled_buf[i].buf;
 				}
 			}
@@ -438,7 +438,7 @@ char *alloc_settled_log_buf() {
 void free_settled_log_buf(char *buf) {
 	for (int i = 0; i < n_settled_conf; i++) {
 		if (settled_buf[i].buf == (void *)buf) {
-			__sync_fetch_and_sub(&settled_buf[i].valid, 1);
+			settled_buf[i].valid = 0;
 			return;
 		}
 	}

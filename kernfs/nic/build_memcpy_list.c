@@ -176,23 +176,10 @@ void build_memcpy_list(void *arg)
 
 	print_build_memcpy_list_arg(bm_arg);
 
-	// Wait until fetch log is done.
-	while (!(*bm_arg->fetch_log_done_p)) cpu_relax();
-#ifdef SETTLED_LOG_BUF
-	free_settled_log_buf(bm_arg->log_buf);
-	free_settled_log_buf_flag(bm_arg->copy_log_done_p);
-#else
-	nic_slab_free(bm_arg->log_buf);
-#ifdef NO_MEM_FREE
-	mlfs_free(bm_arg->copy_log_done_p);
-#else
-	nic_slab_free(bm_arg->copy_log_done_p);
-#endif
-#endif
-
 #ifdef NO_HDR_DIGEST
 	// Wait until fetch loghdr is done.
-	while (!(*bm_arg->fetch_loghdr_done_p)) cpu_relax();
+	volatile uint64_t *hdr_flag = bm_arg->fetch_loghdr_done_p;
+	while (!(*hdr_flag)) cpu_relax();
 #ifndef NO_MEM_FREE
 	nic_slab_free(bm_arg->fetch_loghdr_done_p);
 	nic_slab_free(bm_arg->loghdr_buf);

@@ -174,17 +174,18 @@ static void send_batched_memcpy_req_to_host(struct replication_context *rctx)
 						       // memcpy_list entry.
 	sockfd = g_kernfs_peers[nic_kid_to_host_kid(g_kernfs_id)]
 			 ->sockfd[SOCK_BG];
+#ifndef NO_HDR_UPDATE
 	ack_bit_p = rpc_alloc_ack_bit();
-
+#endif
 	// Check max size.
 	mlfs_assert(size <= g_memcpy_meta_cnt);
 
 	// Set remote destination address.
 	set_rdma_meta_dst(r_meta, host_memcpy_buf_addrs[libfs_id]);
-
+#ifndef NO_HDR_UPDATE
 	// Send loghdrs vis RDMA write.
 	IBV_WRAPPER_WRITE_ASYNC(sockfd, r_meta, MR_DRAM_BUFFER, MR_DRAM_BUFFER);
-
+#endif
 	sprintf(msg,
 		"|" TO_STR(RPC_MEMCPY_REQ) " |%d|%lu|%lu|%lu|%u|%lu|%d|%lu|%d|",
 		libfs_id, batch_meta->first_seqn, size,
@@ -193,12 +194,14 @@ static void send_batched_memcpy_req_to_host(struct replication_context *rctx)
 		r_meta->sge_count);
 
 #ifndef DIGEST_MEMCPY_NOOP
+#ifndef NO_HDR_UPDATE
 	rpc_forward_msg_with_per_libfs_seqn(sockfd, msg, libfs_id);
 
 	// TODO OPTIMIZE do not wait it. We can wait it at end_pipeline().
 	rpc_wait_ack(ack_bit_p);
 	pr_pipe("Finish waiting host memcpy done. libfs_id=%d seqn=%lu cnt=%d",
 		libfs_id, batch_meta->first_seqn, r_meta->sge_count);
+#endif
 #endif
 
 #ifdef CHECK_SANITY_MEMCPY_LIST_BUF
@@ -210,7 +213,11 @@ static void send_batched_memcpy_req_to_host(struct replication_context *rctx)
 #endif
 	// Free memcpy list buffers.
 	for (int i = 0; i < r_meta->sge_count; i++) {
+#ifndef NO_MEM_FREE
 		nic_slab_free((void *)r_meta->sge_entries[i].addr);
+#else
+		mlfs_free((void *)r_meta->sge_entries[i].addr);
+#endif
 	}
 
 	// Reset rdma meta.
@@ -1068,7 +1075,6 @@ void request_host_memcpy(void *arg)
 #ifdef BATCH_MEMCPY_LIST
 	// pthread_mutex_t * batch_mutex = &rctx->mcpy_list_batch_meta.r_meta->mutex;
 	// pthread_mutex_lock(batch_mutex);
-#ifndef NO_HDR_UPDATE
 	if (add_memcpy_list_to_batch(rctx, &hm_arg)) {
 #ifdef BACKUP_RDMA_MEMCPY
 		printf("[Warn] BACKUP RDMA MEMCPY is not implemented with memcpy batching.\n");
@@ -1076,7 +1082,6 @@ void request_host_memcpy(void *arg)
 		// Send request once sge list is full.
 		send_batched_memcpy_req_to_host(rctx);
 	}
-#endif
 	// pthread_mutex_unlock(batch_mutex);
 #else
 

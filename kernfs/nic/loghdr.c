@@ -130,6 +130,10 @@ void build_loghdr_list(void *arg)
 	check_loghdr_list(loghdr_buf, bl_arg->n_loghdrs);
 #endif
 
+#ifdef SETTLED_LOG_BUF
+	free_settled_log_buf(bl_arg->log_buf);
+#endif
+
 	mlfs_assert(cnt == bl_arg->n_loghdrs);
 	mlfs_assert((uintptr_t)loghdr_p == buf_exceed);
 
@@ -200,6 +204,18 @@ void build_loghdr_list(void *arg)
 		rctx, bl_arg->seqn, (uintptr_t)loghdr_buf, bl_arg->n_loghdrs,
 		digest_blk_cnt, bl_arg->fetch_start_blknr,
 		(uintptr_t)fetch_loghdr_done_p);
+#endif
+
+#ifndef SETTLED_LOG_BUF
+	volatile uint64_t *fetch_log_done_p = bl_arg->fetch_log_done_p;
+	while (!(*fetch_log_done_p))
+		cpu_relax();
+	nic_slab_free(bl_arg->log_buf);
+#ifdef NO_MEM_FREE
+	mlfs_free(bl_arg->fetch_log_done_p);
+#else
+	nic_slab_free(bl_arg->fetch_log_done_p);
+#endif
 #endif
 
 	END_TL_TIMER(evt_build_loghdr);

@@ -30,9 +30,9 @@ void init_prefetch_rate_limiter(void)
 {
 	init_rt_bw_stat(&prefetch_rt_bw, "prefetch");
 #ifdef EXP_FEATURES
-	available_bw = (int64_t)prefetch_rt_bw.prefetch_data_cap * (1024 * 1024); // MB to Bytes
+	available_bw = (int64_t)prefetch_rt_bw.prefetch_data_cap * 1024; // KB to B
 #ifdef SETTLED_LOG_BUF
-	int available_blk = prefetch_rt_bw.prefetch_data_cap * 256;  // 4KB block
+	int available_blk = prefetch_rt_bw.prefetch_data_cap / 4;  // 4KB block
 	n_settled_conf = available_blk / prefetch_rt_bw.log_prefetch_threshold + 1;
 	settled_buf = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
 	settled_flag = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
@@ -323,10 +323,10 @@ static uint64_t update_prefetch_bw_usage(rt_bw_stat *stat, uint64_t sent_bytes)
 	pthread_spin_unlock(&stat->lock);
 
 	// printf("cur_usage=%lu threshold=%lu\n", cur_usage,
-	// (uint64_t)mlfs_conf.prefetch_data_cap * (1024 * 1024));
+	// (uint64_t)mlfs_conf.prefetch_data_cap * 1024);
 
 	if (cur_usage >
-	    (uint64_t)mlfs_conf.prefetch_data_cap * (1024 * 1024) /* MB to Bytes */) {
+	    (uint64_t)mlfs_conf.prefetch_data_cap * 1024 /* KB to B */) {
 		// Get the remaining time within an epoch in nanoseconds.
 		ret = one_second - time_elapsed_ns;
 		printf(ANSI_COLOR_RED "[PREFETCH_RATE_LIMIT] cur_usage(MB)=%lu "
@@ -442,7 +442,7 @@ char *alloc_settled_log_buf() {
 void free_settled_log_buf(char *buf) {
 	for (int i = 0; i < n_settled_conf; i++) {
 		if (settled_buf[i].buf == (void *)buf) {
-			__sync_fetch_and_sub(settled_buf[i].valid, 1);
+			__sync_fetch_and_sub(&settled_buf[i].valid, 1);
 			return;
 		}
 	}

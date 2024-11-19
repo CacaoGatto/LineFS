@@ -59,7 +59,8 @@ export THREAD_NUM_END_PIPELINE=2
 
 # Parameters.
 export REQUEST_RATE_LIMIT_THRESHOLD=500
-export PREFETCH_DATA_CAP=2	# Prefetch data cap in MB.
+# export PREFETCH_DATA_CAP=2	# Prefetch data cap in MB.
+export PREFETCH_DATA_CAP=2048	# Prefetch data cap in KB. For better control.
 
 # For experiment
 export X86_SIGNAL_PATH='/home/yxy/LineFS/scripts/signals' # Signal path in X86 host. It should be the same as $PROJ_DIR(in global.sh)/scripts/signals.

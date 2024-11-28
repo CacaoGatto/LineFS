@@ -20,6 +20,28 @@ TL_EVENT_TIMER(evt_coalesce_rate_limit);
 TL_EVENT_TIMER(evt_coalesce_build_loghdrs_arg);
 TL_EVENT_TIMER(evt_coalesce_compress_arg);
 
+typedef struct rm_bd_arg {
+	void *arg;
+} rm_bd_arg_t;
+
+typedef struct rm_cp_arg {
+	void *arg;
+} rm_cp_arg_t;
+
+int post_bd_req(void *arg)
+{
+	rm_bd_arg_t *bd_arg = (rm_bd_arg_t *)arg;
+	thpool_add_work(thpool_loghdr_build, build_loghdr_list, (void *)bd_arg->arg);
+	return 0;
+}
+
+int post_cp_req(void *arg)
+{
+	rm_cp_arg_t *cp_arg = (rm_cp_arg_t *)arg;
+	thpool_add_work(thpool_copy_to_last_replica, copy_log_to_last_replica_bg, (void *)cp_arg->arg);
+	return 0;
+}
+
 threadpool init_coalesce_thpool(void)
 {
 	int th_num = mlfs_conf.thread_num_coalesce;
@@ -32,6 +54,11 @@ threadpool init_coalesce_thpool(void)
 	// Init threadpool of the next pipeline stage.
 	thpool_loghdr_build = init_loghdr_build_thpool();
 	thpool_compress = init_compress_thpool();
+
+#ifdef REQUEST_MANAGER
+	register_rm_func(rm_handle, post_bd_req, RM_BD_REQ);
+	register_rm_func(rm_handle, post_cp_req, RM_CP_REQ);
+#endif
 
 	return thpool_coalesce;
 }
@@ -146,7 +173,15 @@ void coalesce_log(void *arg)
 
 #ifndef NO_PIPELINING
 #ifndef NO_HDR_ALL
+#ifndef REQUEST_MANAGER
 	thpool_add_work(thpool_loghdr_build, build_loghdr_list, (void *)bl_arg);
+#else
+	rm_req_t *rm_req = (rm_req_t *)mlfs_zalloc(sizeof(rm_req_t) + sizeof(rm_bd_arg_t));
+	rm_req->key = bl_arg->log_buf;
+	rm_bd_arg_t *bd_arg = (rm_bd_arg_t *)rm_req->arg;
+	bd_arg->arg = bl_arg;
+	post_rm_req(rm_handle, rm_req, RM_BD_REQ);
+#endif
 #endif
 #endif
 
@@ -213,8 +248,16 @@ void coalesce_log(void *arg)
 	} else {
 		// NOTE We don't send ack to libfs on fsync assuming that local copy
 		// finishes earlier than remote copy.
+#ifndef REQUEST_MANAGER
 		thpool_add_work(thpool_copy_to_last_replica,
 				copy_log_to_last_replica_bg, (void *)cr_arg);
+#else
+		rm_req_t *rm_req = (rm_req_t *)mlfs_zalloc(sizeof(rm_req_t) + sizeof(rm_cp_arg_t));
+		rm_req->key = cr_arg->log_buf;
+		rm_cp_arg_t *cp_arg = (rm_cp_arg_t *)rm_req->arg;
+		cp_arg->arg = cr_arg;
+		post_rm_req(rm_handle, rm_req, RM_CP_REQ);
+#endif
 		END_TL_TIMER(evt_coalesce);
 
 #ifdef NO_PIPELINING

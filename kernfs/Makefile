@@ -81,13 +81,13 @@ WITH_SNIC_COMMON_FLAGS += -DNIC_OFFLOAD
 WITH_SNIC_COMMON_FLAGS += -DDIGEST_OPT_MERGE_WRITES
 # WITH_SNIC_COMMON_FLAGS += -DCOMPRESS_LOG
 WITH_SNIC_COMMON_FLAGS += -DBATCH_MEMCPY_LIST
-WITH_SNIC_COMMON_FLAGS += -DPREFETCH_FLOW_CONTROL # To prevent from running out of NIC memory. It limits prefetching bandwidth. Use this feature only for debugging or investigation because it drops throughput.
+# WITH_SNIC_COMMON_FLAGS += -DPREFETCH_FLOW_CONTROL # To prevent from running out of NIC memory. It limits prefetching bandwidth. Use this feature only for debugging or investigation because it drops throughput.
 # WITH_SNIC_COMMON_FLAGS += -DNO_PIPELINING  # Naive offloading without pipelining
 # WITH_SNIC_COMMON_FLAGS += -DNO_PIPELINING_BG_COPY  # Copy to local NVM in background.
 # WITH_SNIC_COMMON_FLAGS += -DPIPELINE_RATE_LIMIT  # Enable rate limiter in LineFS.
 # WITH_SNIC_COMMON_FLAGS += -DBACKUP_RDMA_MEMCPY # Use RDMA memcpy on Replica1's host failure.
 
-WITH_SNIC_COMMON_FLAGS += -DFINER_FLOW_CONTROL # When persisting log by RDMA read, apply more strict unlimit point after write comp rather than read comp.
+# WITH_SNIC_COMMON_FLAGS += -DFINER_FLOW_CONTROL # When persisting log by RDMA read, apply more strict unlimit point after write comp rather than read comp.
 # WITH_SNIC_COMMON_FLAGS += -DNIC_SLAB_HUGE_PAGE # Use huge page for NIC slab.
 
 # WITH_SNIC_COMMON_FLAGS += -DNO_HDR_ALL # Disable all loghdrs operations on NIC. It is used for debugging.
@@ -96,10 +96,12 @@ WITH_SNIC_COMMON_FLAGS += -DFINER_FLOW_CONTROL # When persisting log by RDMA rea
 # WITH_SNIC_COMMON_FLAGS += -DNO_HDR_COPY  # Disable reading loghdrs on second NIC. It is used for debugging.
 
 # WITH_SNIC_COMMON_FLAGS += -DSEQN_REORDER_NAIVE # Naive strategy to avoid 6 continuous unordered seqn
-WITH_SNIC_COMMON_FLAGS += -DSEQN_REORDER_ADVANCED # Advanced strategy to avoid 6 continuous unordered seqn
+# WITH_SNIC_COMMON_FLAGS += -DSEQN_REORDER_ADVANCED # Advanced strategy to avoid 6 continuous unordered seqn
 
 # WITH_SNIC_COMMON_FLAGS += -DNO_MEM_FREE # Disable memory free on NIC. It is used for debugging.
-WITH_SNIC_COMMON_FLAGS += -DSETTLED_LOG_BUF  # Settled log buffer on NIC. It is used for debugging.
+# WITH_SNIC_COMMON_FLAGS += -DSETTLED_LOG_BUF  # Settled log buffer on NIC. It is used for debugging.
+
+WITH_SNIC_COMMON_FLAGS += -DPREFETCH_FLOW_CONTROL -DFINER_FLOW_CONTROL -DSEQN_REORDER_ADVANCED -DSETTLED_LOG_BUF # All flags for optimized version.
 
 ### With NIC offloading. Flags for host.
 WITH_SNIC_HOST_FLAGS = $(WITH_SNIC_COMMON_FLAGS)

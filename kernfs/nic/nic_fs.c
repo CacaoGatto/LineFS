@@ -973,6 +973,11 @@ void init_nic_fs(void)
 	sleep(2);
 #endif
 
+#ifdef PREFETCH_FLOW_CONTROL
+	// Move ahead for function registration.
+	init_prefetch_rate_limiter();
+#endif
+
 	// A fixed thread for using SPDK.
 	thread_pool_ssd = thpool_init(1, "ssd");
 	print_thread_init(1, "ssd");
@@ -990,9 +995,7 @@ void init_nic_fs(void)
 	init_rate_limiter();
 	thpool_add_work(thread_pool_rate_limiter, rate_limit_worker, NULL);
 #endif
-#ifdef PREFETCH_FLOW_CONTROL 
-	init_prefetch_rate_limiter();
-#endif
+
 #ifdef BACKUP_RDMA_MEMCPY
 	thread_pool_handle_heartbeat = thpool_init(1, "hb_handle");
 	thread_pool_heartbeat_checker = thpool_init(1, "hb_check");
@@ -1067,7 +1070,11 @@ void init_nic_fs(void)
 
 	// TODO sleep forever???
 	while (1) {
+#ifndef REQUEST_MANAGER
 		sleep(100000);
+#else
+		poll_rm_req(rm_handle, 0);
+#endif
 	}
 	printf("Bye!\n");
 }

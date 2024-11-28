@@ -33,6 +33,30 @@ rt_bw_stat fetch_log_from_primary_bw_stat = {0};
 rt_bw_stat fetch_log_from_local_bw_stat = {0};
 #endif
 
+#ifdef REQUEST_MANAGER
+typedef struct rm_pf_arg {
+	uintptr_t local_addr;
+	uintptr_t remote_addr;
+	uint64_t size;
+	int sock_bg;
+} rm_pf_arg_t;
+
+int post_pf_req(void *arg)
+{
+	rm_pf_arg_t *pf_arg = (rm_pf_arg_t *)arg;
+	uintptr_t local_addr = pf_arg->local_addr;
+	uintptr_t remote_addr = pf_arg->remote_addr;
+	uint64_t size = pf_arg->size;
+	int sock_bg = pf_arg->sock_bg;
+	rdma_meta_t *rdma_meta = create_rdma_meta(local_addr, remote_addr, size);
+	IBV_WRAPPER_READ_SYNC(sock_bg, rdma_meta, MR_DRAM_BUFFER, MR_NVM_LOG);
+	mlfs_free(rdma_meta);
+	// Immediately poll it for it is a synchronous operation.
+	poll_rm_req(rm_handle, 1);
+	return 0;
+}
+#endif
+
 threadpool init_log_fetch_from_local_nvm_thpool(void)
 {
 	int th_num = mlfs_conf.thread_num_log_prefetch;
@@ -50,6 +74,10 @@ threadpool init_log_fetch_from_local_nvm_thpool(void)
 
 #ifdef PROFILE_REALTIME_FETCH_LOG_FROM_LOCAL
 	init_rt_bw_stat(&fetch_log_from_local_bw_stat, "fetch_log_from_local");
+#endif
+
+#ifdef REQUEST_MANAGER
+	register_rm_func(rm_handle, post_pf_req, RM_PF_REQ);
 #endif
 
 	return thpool_log_fetch_from_local_nvm;
@@ -136,11 +164,26 @@ static uint64_t read_log_from_local_nvm(int libfs_id, uintptr_t local_addr,
 		return 0;
 	}
 
+#ifndef REQUEST_MANAGER
+
 	// TODO PROFILE mlfs_zalloc in create_rdma_meta.
 	rdma_meta = create_rdma_meta(local_addr, remote_addr, size);
 
 	IBV_WRAPPER_READ_SYNC(sock_bg, rdma_meta, MR_DRAM_BUFFER, MR_NVM_LOG);
 	mlfs_free(rdma_meta);
+
+#else
+
+	rm_req_t *rm_req = (rm_req_t *)mlfs_zalloc(sizeof(rm_req_t) + sizeof(rm_pf_arg_t));
+	rm_req->key = local_addr;
+	rm_pf_arg_t *pf_arg = (rm_pf_arg_t *)rm_req->arg;
+	pf_arg->local_addr = local_addr;
+	pf_arg->remote_addr = remote_addr;
+	pf_arg->size = size;
+	pf_arg->sock_bg = sock_bg;
+	post_rm_req(rm_handle, rm_req, RM_PF_REQ);
+
+#endif
 
 	return (size >> g_block_size_shift);
 }

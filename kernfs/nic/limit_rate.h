@@ -4,10 +4,16 @@
 #include "global/types.h"
 #include "ds/stdatomic.h"
 #include "pipeline_common.h"
+#include "reorder_wrapper.h"
 
 extern atomic_uint rate_limit_on;
 extern uint64_t *primary_rate_limit_flag; // Used by primary. Limit flag set/unset by the next replica.
 extern uint64_t primary_rate_limit_addr; // Used by replica 1. Rate limit flag address of the previous replica (primary). RDMA write to this address.
+
+#define REQUEST_MANAGER
+#ifdef REQUEST_MANAGER
+extern int rm_handle;
+#endif
 
 void init_rate_limiter(void);
 void init_prefetch_rate_limiter(void);

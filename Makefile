@@ -12,6 +12,8 @@ redownload:
 	cd kernfs/lib && make redownload
 
 host-lib:
+	sudo ndctl create-namespace -fe namespace0.0 -m dax
+	sudo ndctl create-namespace -fe namespace1.0 -m dax
 	cd libfs/lib && make all
 	cd kernfs/lib && make all
 

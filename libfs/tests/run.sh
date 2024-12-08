@@ -16,4 +16,11 @@
 ##LD_PRELOAD=../../shim/libshim/libshim.so ${@}
 
 source ../../mlfs_config.sh
-$@
+# Run withouth any profiling
+##$@
+# Run with NUMA affinity
+##numactl -N0 -m0 $@
+# Run with memory profiling
+##LD_PRELOAD=../lib/jemalloc-4.5.0/lib/libjemalloc.so.2 $@
+# Run with memory profiling and NUMA affinity (recommended)
+LD_PRELOAD=../lib/jemalloc-4.5.0/lib/libjemalloc.so.2 numactl -N0 -m0 $@

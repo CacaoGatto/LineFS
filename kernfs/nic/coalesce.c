@@ -113,6 +113,10 @@ void coalesce_log(void *arg)
 	uint32_t n_coalesced_loghdrs;
 	uint64_t coalesced_log_size;
 
+#ifdef REQUEST_MANAGER
+	poll_rm_req(rm_handle, (uint64_t)c_arg->log_buf);
+#endif
+
 #ifdef SEQN_REORDER_ADVANCED
 	unsigned long newest = atomic_load(&rctx->coalesce_newest);
 	unsigned long expect = atomic_load(&rctx->coalesce_expect);
@@ -177,10 +181,9 @@ void coalesce_log(void *arg)
 	thpool_add_work(thpool_loghdr_build, build_loghdr_list, (void *)bl_arg);
 #else
 	rm_req_t *rm_req = (rm_req_t *)mlfs_zalloc(sizeof(rm_req_t) + sizeof(rm_bd_arg_t));
-	rm_req->key = bl_arg->log_buf;
 	rm_bd_arg_t *bd_arg = (rm_bd_arg_t *)rm_req->arg;
 	bd_arg->arg = bl_arg;
-	post_rm_req(rm_handle, rm_req, RM_BD_REQ);
+	post_rm_req(rm_handle, rm_req, (uint64_t)bl_arg->log_buf, RM_BD_REQ);
 #endif
 #endif
 #endif
@@ -253,10 +256,9 @@ void coalesce_log(void *arg)
 				copy_log_to_last_replica_bg, (void *)cr_arg);
 #else
 		rm_req_t *rm_req = (rm_req_t *)mlfs_zalloc(sizeof(rm_req_t) + sizeof(rm_cp_arg_t));
-		rm_req->key = cr_arg->log_buf;
 		rm_cp_arg_t *cp_arg = (rm_cp_arg_t *)rm_req->arg;
 		cp_arg->arg = cr_arg;
-		post_rm_req(rm_handle, rm_req, RM_CP_REQ);
+		post_rm_req(rm_handle, rm_req, (uint64_t)cr_arg->log_buf, RM_CP_REQ);
 #endif
 		END_TL_TIMER(evt_coalesce);
 

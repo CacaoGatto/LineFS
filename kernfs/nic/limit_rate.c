@@ -39,7 +39,7 @@ void init_prefetch_rate_limiter(void)
 	n_settled_conf = available_blk / prefetch_rt_bw.log_prefetch_threshold + 1;
 #ifdef REQUEST_MANAGER
 	const int n_settled_max = 1024;
-	initialize_req_manager(n_settled_conf, n_settled_max, n_settled_conf - 1, &rm_handle);
+	initialize_req_manager(n_settled_conf, n_settled_max, n_settled_conf, &rm_handle);
 	n_settled_conf = n_settled_max;
 #endif
 	settled_buf = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
@@ -451,12 +451,12 @@ void free_settled_log_buf(char *buf) {
 	for (int i = 0; i < n_settled_conf; i++) {
 		if (settled_buf[i].buf == (void *)buf) {
 			__sync_fetch_and_sub(&settled_buf[i].valid, 1);
+#ifdef REQUEST_MANAGER
+			poll_rm_req(rm_handle, (uint64_t)buf);
+#endif
 			return;
 		}
 	}
-#ifdef REQUEST_MANAGER
-	poll_rm_req(rm_handle, 1);
-#endif
 }
 
 uint64_t *alloc_settled_log_buf_flag() {

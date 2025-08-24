@@ -1073,7 +1073,8 @@ void init_nic_fs(void)
 #ifndef REQUEST_MANAGER
 		sleep(100000);
 #else
-		poll_rm_req(rm_handle, 0);
+		poll_rm_req(rm_handle, rm_invalid_key);
+		cpu_relax();
 #endif
 	}
 	printf("Bye!\n");

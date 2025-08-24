@@ -9,9 +9,10 @@ extern "C" {
 
 typedef struct rm_req {
     uint64_t type;
-    uint64_t key;
     char *arg[0];
 } rm_req_t;
+
+extern uint64_t rm_invalid_key;
 
 #define RM_PF_REQ 0
 #define RM_BD_REQ 1
@@ -19,8 +20,8 @@ typedef struct rm_req {
 
 int initialize_req_manager(uint32_t ideal, uint32_t total, uint32_t thres, int *rm_handle);
 int destroy_req_manager(int rm_handle);
-int post_rm_req(int rm_handle, void *req, int type);
-int poll_rm_req(int rm_handle, int ncomp);
+int post_rm_req(int rm_handle, void *req, uint64_t key, int type);
+int poll_rm_req(int rm_handle, uint64_t key);
 uint64_t register_rm_func(int rm_handle, int (*post_handler)(void *arg), int type);
 int deregister_rm_func(int rm_handle, uint64_t type);
 uint64_t alloc_rm_group(int rm_handle, uint32_t weight);

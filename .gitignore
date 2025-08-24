@@ -39,5 +39,6 @@ compile_commands.*
 
 # temp files.
 commit_msg
+sync.sh
 
 scripts/signals

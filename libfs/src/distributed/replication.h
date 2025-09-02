@@ -297,7 +297,7 @@ struct replication_context {
 	uintptr_t libfs_rate_limit_addr;
 
 #ifdef SEQN_REORDER_ADVANCED
-	atomic_ulong coalesce_newest;
+	uint8_t *coalesce_record;
 	atomic_ulong coalesce_expect;
 #endif
 

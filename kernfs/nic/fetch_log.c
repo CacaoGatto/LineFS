@@ -33,12 +33,6 @@ rt_bw_stat fetch_log_from_primary_bw_stat = {0};
 rt_bw_stat fetch_log_from_local_bw_stat = {0};
 #endif
 
-#ifdef REQUEST_MANAGER
-#define REORDER_LIMIT 1024
-#else
-#define REORDER_LIMIT 6
-#endif
-
 static uint64_t read_log_from_local_nvm(int libfs_id, uintptr_t local_addr, uintptr_t remote_addr, uint64_t size);
 
 #ifdef REQUEST_MANAGER
@@ -252,11 +246,8 @@ void fetch_log_from_local_nvm_bg(void *arg)
 
 #ifdef PREFETCH_FLOW_CONTROL
 	// Limit prefetch rate to deal with out-of-NIC-memory problem.
-#ifdef SEQN_REORDER_NAIVE
-	while (atomic_load(&rctx->next_host_memcpy_seqn) + REORDER_LIMIT <= lf_arg->seqn)
-		cpu_relax();
-#elif defined(SEQN_REORDER_ADVANCED)
-	while (atomic_load(&rctx->coalesce_expect) + REORDER_LIMIT <= lf_arg->seqn)
+#ifdef SEQN_REORDER_ADVANCED
+	while (atomic_load(&rctx->coalesce_expect) + reorder_limit <= lf_arg->seqn)
 		cpu_relax();
 #endif
 	limit_prefetch_rate(size);

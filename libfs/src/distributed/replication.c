@@ -87,6 +87,16 @@ static void alloc_shm_to_g_sync_ctx_peer(void) {
 }
 #endif
 
+static int calc_reorder_range() {
+#ifdef REQUEST_MANAGER
+	return 1024;
+#else
+	int blk_total = mlfs_conf.prefetch_data_cap / 4;
+	int blk_avail = blk_total / mlfs_conf.log_prefetch_threshold + 1;
+	return blk_avail;
+#endif
+}
+
 void init_replication(int remote_log_id, struct peer_id *peer, addr_t begin,
                       addr_t size, addr_t addr, atomic_ulong *end,
                       int next_rep_data_sockfd[], int next_rep_msg_sockfd[],
@@ -204,8 +214,12 @@ void init_replication(int remote_log_id, struct peer_id *peer, addr_t begin,
 
 #ifdef NIC_SIDE
 #ifdef SEQN_REORDER_ADVANCED
-	atomic_init(&g_sync_ctx[idx]->coalesce_newest, 0);
-	atomic_init(&g_sync_ctx[idx]->coalesce_expect, 0);
+	int reorder_range = calc_reorder_range();
+	g_sync_ctx[idx]->coalesce_record = (uint8_t *)malloc(sizeof(uint8_t) * reorder_range);
+	for (int i = 0; i < reorder_range; i++) {
+		g_sync_ctx[idx]->coalesce_record[i] = 0;
+	}
+	atomic_init(&g_sync_ctx[idx]->coalesce_expect, 1);
 #endif
 	// Build memcpy list related.
 	g_sync_ctx[idx]->thpool_build_memcpy_list = init_build_memcpy_list_thpool(idx);

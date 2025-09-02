@@ -12,6 +12,7 @@ uint64_t primary_rate_limit_addr = 0;
 #ifdef EXP_FEATURES
 
 volatile int64_t available_bw;
+uint64_t reorder_limit;
 
 #ifdef SETTLED_LOG_BUF
 struct settled_conf_t {
@@ -34,14 +35,14 @@ void init_prefetch_rate_limiter(void)
 	init_rt_bw_stat(&prefetch_rt_bw, "prefetch");
 #ifdef EXP_FEATURES
 	available_bw = (int64_t)prefetch_rt_bw.prefetch_data_cap * 1024; // KB to B
-#ifdef SETTLED_LOG_BUF
 	int available_blk = prefetch_rt_bw.prefetch_data_cap / 4;  // 4KB block
-	n_settled_conf = available_blk / prefetch_rt_bw.log_prefetch_threshold + 1;
+	reorder_limit = (uint64_t)available_blk / prefetch_rt_bw.log_prefetch_threshold + 1;
+#ifdef SETTLED_LOG_BUF
 #ifdef REQUEST_MANAGER
-	const int n_settled_max = 1024;
-	initialize_req_manager(n_settled_conf, n_settled_max, n_settled_conf, &rm_handle);
-	n_settled_conf = n_settled_max;
+	initialize_req_manager(reorder_limit, 1024, reorder_limit, &rm_handle);
+	reorder_limit = 1024;
 #endif
+	n_settled_conf = reorder_limit;
 	settled_buf = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
 	settled_flag = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
 	for (int i = 0; i < n_settled_conf; i++) {

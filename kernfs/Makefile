@@ -95,7 +95,6 @@ WITH_SNIC_COMMON_FLAGS += -DBATCH_MEMCPY_LIST
 # WITH_SNIC_COMMON_FLAGS += -DNO_HDR_UPDATE # Disable updating loghdrs towards the host on NIC. It is used for debugging.
 # WITH_SNIC_COMMON_FLAGS += -DNO_HDR_COPY  # Disable reading loghdrs on second NIC. It is used for debugging.
 
-# WITH_SNIC_COMMON_FLAGS += -DSEQN_REORDER_NAIVE # Naive strategy to avoid 6 continuous unordered seqn
 # WITH_SNIC_COMMON_FLAGS += -DSEQN_REORDER_ADVANCED # Advanced strategy to avoid 6 continuous unordered seqn
 
 # WITH_SNIC_COMMON_FLAGS += -DNO_MEM_FREE # Disable memory free on NIC. It is used for debugging.

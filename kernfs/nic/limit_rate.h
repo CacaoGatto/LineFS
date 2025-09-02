@@ -10,7 +10,6 @@ extern atomic_uint rate_limit_on;
 extern uint64_t *primary_rate_limit_flag; // Used by primary. Limit flag set/unset by the next replica.
 extern uint64_t primary_rate_limit_addr; // Used by replica 1. Rate limit flag address of the previous replica (primary). RDMA write to this address.
 
-#define REQUEST_MANAGER
 #ifdef REQUEST_MANAGER
 extern int rm_handle;
 #endif
@@ -32,6 +31,7 @@ void limit_prefetch_rate(uint64_t sent_bytes);
 
 #ifdef EXP_FEATURES
 void unlimit_prefetch_rate(uint64_t sent_bytes);
+extern uint64_t reorder_limit;
 #endif
 
 #ifdef SETTLED_LOG_BUF

@@ -42,7 +42,7 @@ export THREAD_NUM_REP=8
 export THREAD_NUM_DIGEST_RDMA_MEMCPY=1
 # host kernfs. max=8
 export THREAD_NUM_DIGEST_HOST_MEMCPY=8
-export THREAD_NUM_LOG_PREFETCH=2 # From local NVM to NICFS in Primary.
+export THREAD_NUM_LOG_PREFETCH=4 # From local NVM to NICFS in Primary.
 export THREAD_NUM_LOG_PREFETCH_REQ=1 # libfs.
 export THREAD_NUM_PREPARE_LOGHDRS=8
 
@@ -53,14 +53,14 @@ export THREAD_NUM_COMPRESS=8
 export THREAD_NUM_LOG_FETCH=1 # Primary to Replica 1
 export THREAD_NUM_FSYNC=1
 export THREAD_NUM_COPY_LOG_TO_LOCAL_NVM=2
-export THREAD_NUM_COPY_LOG_TO_LAST_REPLICA=3
+export THREAD_NUM_COPY_LOG_TO_LAST_REPLICA=4
 export THREAD_NUM_PERSIST_LOG=4 # clflush
 export THREAD_NUM_END_PIPELINE=2
 
 # Parameters.
 export REQUEST_RATE_LIMIT_THRESHOLD=500
 # export PREFETCH_DATA_CAP=2	# Prefetch data cap in MB.
-export PREFETCH_DATA_CAP=2048	# Prefetch data cap in KB. For better control.
+export PREFETCH_DATA_CAP=6000	# Prefetch data cap in KB. For better control.
 
 # For experiment
 export X86_SIGNAL_PATH='/home/yxy/LineFS/scripts/signals' # Signal path in X86 host. It should be the same as $PROJ_DIR(in global.sh)/scripts/signals.

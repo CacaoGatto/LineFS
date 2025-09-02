@@ -118,14 +118,22 @@ void coalesce_log(void *arg)
 #endif
 
 #ifdef SEQN_REORDER_ADVANCED
-	unsigned long newest = atomic_load(&rctx->coalesce_newest);
+	volatile uint8_t *record = rctx->coalesce_record;
 	unsigned long expect = atomic_load(&rctx->coalesce_expect);
 	unsigned long seqn = c_arg->seqn;
-	if (seqn > newest) {
-		newest = seqn;
-		atomic_store(&rctx->coalesce_newest, newest);
+	if (seqn != expect) {
+		// This is an out-of-order request. Just record it.
+		record[seqn % reorder_limit] = 1;
+	} else {
+		// This is the expected request.
+		// Update expect to the next unrecorded seqn.
+		expect += 1;
+		while (record[expect % reorder_limit] == 1) {
+			record[expect % reorder_limit] = 0;
+			expect++;
+		}
+		atomic_store(&rctx->coalesce_expect, expect);
 	}
-	if (seqn == expect + 1) atomic_store(&rctx->coalesce_expect, newest);
 #endif
 
 	print_coalesce_arg(c_arg);

@@ -13,6 +13,7 @@ extern uint8_t g_log_dev;
 extern uint8_t g_hdd_dev;
 
 #define EXP_FEATURES
+// #define REQUEST_MANAGER
 
 void load_mlfs_configs(void);
 void print_mlfs_configs(void);

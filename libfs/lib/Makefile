@@ -6,7 +6,7 @@ all:
 	sudo apt install -y libndctl-dev libdaxctl-dev cmake
 	make -C nvml -j $(nproc)
 	sudo apt install -y build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev ninja-build pkg-config valgrind
-	(cd rdma-core && ./build.sh)
+	#(cd rdma-core && ./build.sh)
 	(cd rdma && make)
 	sudo apt install -y pkg-config libcapstone-dev
 	(cd syscall_intercept; \
@@ -26,7 +26,7 @@ all:
 snic-all:
 	#make -C nvml -j $(nproc)
 	sudo apt install -y cmake
-	(cd rdma-core && ./build.sh)
+	#(cd rdma-core && ./build.sh)
 	(cd rdma && make)
 	if [ ! -d jemalloc-4.5.0 ]; then tar -xf jemalloc-4.5.0.tar.bz2; fi
 	(cd jemalloc-4.5.0 && \

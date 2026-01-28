@@ -8,6 +8,7 @@
 #include "concurrency/thpool.h"
 
 extern threadpool thpool_copy_to_last_replica; // May be used by both primary and replica 1.
+extern threadpool thread_pool_log_prefetch;
 
 struct log_copy_to_local_nvm_arg {
 	struct replication_context *rctx;

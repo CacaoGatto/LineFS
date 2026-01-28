@@ -25,3 +25,4 @@ statdir_test
 file_create_test
 iobench
 iobench.normal
+simple_test

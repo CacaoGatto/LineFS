@@ -20,26 +20,14 @@ TL_EVENT_TIMER(evt_coalesce_rate_limit);
 TL_EVENT_TIMER(evt_coalesce_build_loghdrs_arg);
 TL_EVENT_TIMER(evt_coalesce_compress_arg);
 
-typedef struct rm_bd_arg {
-	void *arg;
-} rm_bd_arg_t;
-
-typedef struct rm_cp_arg {
-	void *arg;
-} rm_cp_arg_t;
-
-int post_bd_req(void *arg)
+void post_bd_req(void *arg)
 {
-	rm_bd_arg_t *bd_arg = (rm_bd_arg_t *)arg;
-	thpool_add_work(thpool_loghdr_build, build_loghdr_list, (void *)bd_arg->arg);
-	return 0;
+	thpool_add_work(thpool_loghdr_build, build_loghdr_list, arg);
 }
 
-int post_cp_req(void *arg)
+void post_cp_req(void *arg)
 {
-	rm_cp_arg_t *cp_arg = (rm_cp_arg_t *)arg;
-	thpool_add_work(thpool_copy_to_last_replica, copy_log_to_last_replica_bg, (void *)cp_arg->arg);
-	return 0;
+	thpool_add_work(thpool_copy_to_last_replica, copy_log_to_last_replica_bg, arg);
 }
 
 threadpool init_coalesce_thpool(void)
@@ -54,11 +42,6 @@ threadpool init_coalesce_thpool(void)
 	// Init threadpool of the next pipeline stage.
 	thpool_loghdr_build = init_loghdr_build_thpool();
 	thpool_compress = init_compress_thpool();
-
-#ifdef REQUEST_MANAGER
-	register_rm_func(rm_handle, post_bd_req, RM_BD_REQ);
-	register_rm_func(rm_handle, post_cp_req, RM_CP_REQ);
-#endif
 
 	return thpool_coalesce;
 }
@@ -113,10 +96,6 @@ void coalesce_log(void *arg)
 	uint32_t n_coalesced_loghdrs;
 	uint64_t coalesced_log_size;
 
-#ifdef REQUEST_MANAGER
-	poll_rm_req(rm_handle, (uint64_t)c_arg->log_buf);
-#endif
-
 #ifdef SEQN_REORDER_ADVANCED
 	volatile uint8_t *record = rctx->coalesce_record;
 	unsigned long expect = atomic_load(&rctx->coalesce_expect);
@@ -160,6 +139,7 @@ void coalesce_log(void *arg)
 #endif
 #else
 	fetch_log_done_p = alloc_settled_log_buf_flag();
+	mlfs_assert(fetch_log_done_p != NULL);
 #endif
 	*fetch_log_done_p = 0;
 
@@ -188,10 +168,7 @@ void coalesce_log(void *arg)
 #ifndef REQUEST_MANAGER
 	thpool_add_work(thpool_loghdr_build, build_loghdr_list, (void *)bl_arg);
 #else
-	rm_req_t *rm_req = (rm_req_t *)mlfs_zalloc(sizeof(rm_req_t) + sizeof(rm_bd_arg_t));
-	rm_bd_arg_t *bd_arg = (rm_bd_arg_t *)rm_req->arg;
-	bd_arg->arg = bl_arg;
-	post_rm_req(rm_handle, rm_req, (uint64_t)bl_arg->log_buf, RM_BD_REQ);
+	submit_rm_req(rm_handle, (uint64_t)bl_arg->log_buf, bl_arg, post_bd_req);
 #endif
 #endif
 #endif
@@ -263,13 +240,9 @@ void coalesce_log(void *arg)
 		thpool_add_work(thpool_copy_to_last_replica,
 				copy_log_to_last_replica_bg, (void *)cr_arg);
 #else
-		rm_req_t *rm_req = (rm_req_t *)mlfs_zalloc(sizeof(rm_req_t) + sizeof(rm_cp_arg_t));
-		rm_cp_arg_t *cp_arg = (rm_cp_arg_t *)rm_req->arg;
-		cp_arg->arg = cr_arg;
-		post_rm_req(rm_handle, rm_req, (uint64_t)cr_arg->log_buf, RM_CP_REQ);
-#endif
+		submit_rm_req(rm_handle, (uint64_t)cr_arg->log_buf, cr_arg, post_cp_req);
+#endif  // REQUEST_MANAGER
 		END_TL_TIMER(evt_coalesce);
-
 #ifdef NO_PIPELINING
 		// If it is not fsync, a replication path is created with a new
 		// thread.

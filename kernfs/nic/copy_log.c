@@ -327,6 +327,11 @@ void copy_log_to_last_replica_bg(void *arg)
 #ifdef SETTLED_LOG_BUF
 	free_settled_log_buf(c_arg->log_buf);
 	free_settled_log_buf_flag(c_arg->copy_log_done_p);
+#ifdef REQUEST_MANAGER
+	if (!c_arg->fsync) {
+		complete_rm_req(rm_handle, (uint64_t)c_arg->log_buf);
+	}
+#endif
 #else
 #ifdef NO_HDR_ALL  // If NO_HDR_ALL, log buffer is freed here.
 	nic_slab_free(c_arg->log_buf);

@@ -2,6 +2,7 @@
 #include "storage/storage.h"
 #include "limit_rate.h"
 #include "distributed/rpc_interface.h"
+#include "mem_pool.h"
 
 rt_bw_stat prefetch_rt_bw = {0};
 
@@ -9,12 +10,15 @@ atomic_uint rate_limit_on;
 uint64_t *primary_rate_limit_flag;
 uint64_t primary_rate_limit_addr = 0;
 
+#define USE_ADV_MEM_POOL
+
 #ifdef EXP_FEATURES
 
 volatile int64_t available_bw;
 uint64_t reorder_limit;
 
 #ifdef SETTLED_LOG_BUF
+#ifndef USE_ADV_MEM_POOL
 struct settled_conf_t {
 	void *buf;
 	uint64_t valid;
@@ -23,6 +27,10 @@ struct settled_conf_t {
 struct settled_conf_t *settled_buf;
 struct settled_conf_t *settled_flag;
 int n_settled_conf;
+#else
+int log_buf_handle = -1;
+int log_flag_handle = -1;
+#endif
 #ifdef REQUEST_MANAGER
 int rm_handle = -1;
 #endif
@@ -39,9 +47,10 @@ void init_prefetch_rate_limiter(void)
 	reorder_limit = (uint64_t)available_blk / prefetch_rt_bw.log_prefetch_threshold + 1;
 #ifdef SETTLED_LOG_BUF
 #ifdef REQUEST_MANAGER
-	initialize_req_manager(reorder_limit, 1024, reorder_limit, &rm_handle);
-	reorder_limit = 1024;
+	initialize_req_manager(reorder_limit, 16, reorder_limit / 2, &rm_handle);
+	reorder_limit = 8;
 #endif
+#ifndef USE_ADV_MEM_POOL
 	n_settled_conf = reorder_limit;
 	settled_buf = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
 	settled_flag = (struct settled_conf_t *)mlfs_alloc(sizeof(struct settled_conf_t) * n_settled_conf);
@@ -51,6 +60,16 @@ void init_prefetch_rate_limiter(void)
 		settled_flag[i].buf = (char *)nic_slab_alloc_in_byte(sizeof(uint64_t));
 		settled_flag[i].valid = 0;
 	}
+#else
+	initialize_mem_pool(reorder_limit, &log_buf_handle);
+	initialize_mem_pool(reorder_limit, &log_flag_handle);
+	for (int i = 0; i < reorder_limit; i++) {
+		void *buf = nic_slab_alloc_in_blk(prefetch_rt_bw.log_prefetch_threshold + 1);
+		charge_mem_buf(log_buf_handle, buf);
+		void *flag = (char *)nic_slab_alloc_in_byte(sizeof(uint64_t));
+		charge_mem_buf(log_flag_handle, flag);
+	}
+#endif
 #endif
 #endif
 	return;
@@ -432,6 +451,7 @@ void unlimit_prefetch_rate(uint64_t sent_bytes)
 #ifdef SETTLED_LOG_BUF
 
 char *alloc_settled_log_buf() {
+#ifndef USE_ADV_MEM_POOL
 	while (1) {
 		for (int i = 0; i < n_settled_conf; i++) {
 			volatile uint64_t *flag = &settled_buf[i].valid;
@@ -446,21 +466,28 @@ char *alloc_settled_log_buf() {
 			}
 		}
 	}
+#else
+	void *buf = NULL;
+	allocate_mem_buf(log_buf_handle, &buf, 2);
+	return buf;
+#endif
 }
 
 void free_settled_log_buf(char *buf) {
+#ifndef USE_ADV_MEM_POOL
 	for (int i = 0; i < n_settled_conf; i++) {
 		if (settled_buf[i].buf == (void *)buf) {
 			__sync_fetch_and_sub(&settled_buf[i].valid, 1);
-#ifdef REQUEST_MANAGER
-			poll_rm_req(rm_handle, (uint64_t)buf);
-#endif
 			return;
 		}
 	}
+#else
+	free_mem_buf(log_buf_handle, buf);
+#endif
 }
 
 uint64_t *alloc_settled_log_buf_flag() {
+#ifndef USE_ADV_MEM_POOL
 	while (1) {
 		for (int i = 0; i < n_settled_conf; i++) {
 			volatile uint64_t *flag = &settled_flag[i].valid;
@@ -471,15 +498,24 @@ uint64_t *alloc_settled_log_buf_flag() {
 			}
 		}
 	}
+#else
+	void *flag = NULL;
+	allocate_mem_buf(log_flag_handle, &flag, 1);
+	return flag;
+#endif
 }
 
 void free_settled_log_buf_flag(uint64_t *flag) {
+#ifndef USE_ADV_MEM_POOL
 	for (int i = 0; i < n_settled_conf; i++) {
 		if (settled_flag[i].buf == (void *)flag) {
 			settled_flag[i].valid = 0;
 			return;
 		}
 	}
+#else
+	free_mem_buf(log_flag_handle, flag);
+#endif
 }
 
 #endif // SETTLED_LOG_BUF

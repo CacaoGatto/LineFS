@@ -1073,8 +1073,8 @@ void init_nic_fs(void)
 #ifndef REQUEST_MANAGER
 		sleep(100000);
 #else
-		poll_rm_req(rm_handle, rm_invalid_key);
-		cpu_relax();
+		schedule_rm_req(rm_handle, 1024);
+		//cpu_relax();
 #endif
 	}
 	printf("Bye!\n");
@@ -1678,6 +1678,7 @@ log_prefetch : {
 	}
 
 	// Prefetch log in background.
+	lf_arg->log_buf = NULL;
 	thpool_add_work(thread_pool_log_prefetch, fetch_log_from_local_nvm_bg,
 			(void *)lf_arg);
 
@@ -1849,6 +1850,7 @@ log_prefetch : {
 	       &lf_arg->libfs_base_addr, &lf_arg->reset_meta, &lf_arg->fsync,
 	       &lf_arg->fsync_ack_addr);
 
+	lf_arg->log_buf = NULL;
 	thpool_add_work(thread_pool_fsync, fetch_log_from_local_nvm_bg,
 			(void *)lf_arg);
 	// mlfs_assert(lf_arg->fsync); // Low-lat channel is used only on fsync.

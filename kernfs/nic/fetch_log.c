@@ -36,59 +36,10 @@ rt_bw_stat fetch_log_from_local_bw_stat = {0};
 static uint64_t read_log_from_local_nvm(int libfs_id, uintptr_t local_addr, uintptr_t remote_addr, uint64_t size);
 
 #ifdef REQUEST_MANAGER
-typedef struct rm_pf_arg {
-	void *arg;
-	uint64_t n_to_prefetch_blk;
-	coalesce_arg *c_arg;
-	uintptr_t remote_addr;
-	int libfs_id;
-} rm_pf_arg_t;
 
-int post_pf_req(void *arg)
+void post_pf_req(void *arg)
 {
-	rm_pf_arg_t *pf_arg = (rm_pf_arg_t *)arg;
-	coalesce_arg *c_arg = pf_arg->c_arg;
-
-	uint64_t n_blks_read = read_log_from_local_nvm(pf_arg->libfs_id, (uintptr_t)c_arg->log_buf,
-					      pf_arg->remote_addr, c_arg->log_size);
-#ifdef PROFILE_REALTIME_FETCH_LOG_FROM_LOCAL
-	check_rt_bw(&fetch_log_from_local_bw_stat, c_arg->log_size);
-#endif
-
-	// # of read == # of requested.
-	mlfs_assert(n_blks_read == pf_arg->n_to_prefetch_blk);
-#if 0
-	pr_lpref("[PREFETCH] libfs_id=%d n_to_prefetch(n_blks_read)=%lu "
-		 "local_addr=%p libfs_base_addr=0x%lx start_blknr=%lu "
-		 "end_blknr=%lu",
-		 pf_arg->libfs_id, pf_arg->n_to_prefetch_blk, c_arg->log_buf,
-		 lf_arg->libfs_base_addr, start_blknr, end_blknr);
-#endif
-	while (!log_fetcher_ready) {
-		if (c_arg->seqn == first_seqn) {
-			break;
-		}
-	}
-
-#ifdef NO_PIPELINING
-	END_TL_TIMER(evt_fetch_from_local_nvm);
-	coalesce_log((void *) c_arg);
-#else
-	if (c_arg->fsync) {
-		END_TL_TIMER(evt_fetch_from_local_nvm);
-		// Call function directly on fsync.
-		coalesce_log((void *)c_arg);
-	} else {
-		thpool_add_work(thpool_coalesce, coalesce_log, (void *)c_arg);
-		END_TL_TIMER(evt_fetch_from_local_nvm);
-	}
-#endif
-
-	if (!log_fetcher_ready) {
-		log_fetcher_ready = 1;
-	}
-	mlfs_free(pf_arg->arg);
-	return 0;
+	thpool_add_work(thread_pool_log_prefetch, fetch_log_from_local_nvm_bg, arg);
 }
 #endif
 
@@ -109,10 +60,6 @@ threadpool init_log_fetch_from_local_nvm_thpool(void)
 
 #ifdef PROFILE_REALTIME_FETCH_LOG_FROM_LOCAL
 	init_rt_bw_stat(&fetch_log_from_local_bw_stat, "fetch_log_from_local");
-#endif
-
-#ifdef REQUEST_MANAGER
-	register_rm_func(rm_handle, post_pf_req, RM_PF_REQ);
 #endif
 
 	return thpool_log_fetch_from_local_nvm;
@@ -244,6 +191,8 @@ void fetch_log_from_local_nvm_bg(void *arg)
 
 	size = get_size(start_blknr, end_blknr);
 
+#ifndef REQUEST_MANAGER
+
 #ifdef PREFETCH_FLOW_CONTROL
 	// Limit prefetch rate to deal with out-of-NIC-memory problem.
 #ifdef SEQN_REORDER_ADVANCED
@@ -259,37 +208,55 @@ void fetch_log_from_local_nvm_bg(void *arg)
 	log_buf = alloc_settled_log_buf();
 #endif
 
-#ifdef REQUEST_MANAGER
-	rm_req_t *rm_req = (rm_req_t *)mlfs_zalloc(sizeof(rm_req_t) + sizeof(rm_pf_arg_t));
-	rm_pf_arg_t *rm_pf_arg = (rm_pf_arg_t *)rm_req->arg;
-	rm_pf_arg->arg = arg;
-	rm_pf_arg->n_to_prefetch_blk = lf_arg->n_to_prefetch_blk;
-	rm_pf_arg->libfs_id = libfs_id;
-	//rm_pf_arg->log_buf = log_buf;
-	rm_pf_arg->remote_addr = remote_addr;
-	//rm_pf_arg->size = size;
-	//rm_pf_arg->fsync = lf_arg->fsync;
-
-	coalesce_arg *c_arg = (coalesce_arg *)mlfs_zalloc(sizeof(coalesce_arg));
-	c_arg->seqn = lf_arg->seqn;
-	c_arg->rctx = rctx;
-	c_arg->log_buf = log_buf;
-	c_arg->n_loghdrs = lf_arg->n_to_prefetch_loghdr;
-	c_arg->log_size = size;
-	c_arg->fetch_start_blknr = lf_arg->prefetch_start_blknr;
-	c_arg->reset_meta = lf_arg->reset_meta;
-	c_arg->fsync = lf_arg->fsync;
-	c_arg->fsync_ack_addr = lf_arg->fsync_ack_addr;
-	rm_pf_arg->c_arg = c_arg;
-
-	post_rm_req(rm_handle, rm_req, (uint64_t)log_buf, RM_PF_REQ);
-	return;
 #else
+
+	// For scheduler mode, split this function into 2 phases
+	if (!lf_arg->log_buf) {
+#ifdef PREFETCH_FLOW_CONTROL
+		// Limit prefetch rate to deal with out-of-NIC-memory problem.
+#ifdef SEQN_REORDER_ADVANCED
+		//if (atomic_load(&rctx->coalesce_expect) + reorder_limit <= lf_arg->seqn) {
+			//post_pf_req(lf_arg);
+			//return;
+		//}
+#endif
+		// limit_prefetch_rate(size);
+#endif
+#ifndef SETTLED_LOG_BUF
+		log_buf = (char *)nic_slab_alloc_in_byte(size); // alloc MR to replicate
+#else
+		log_buf = alloc_settled_log_buf();
+#endif
+		if (!lf_arg->fsync) {
+			if (log_buf) {
+				lf_arg->log_buf = log_buf;
+				submit_rm_req(rm_handle, (uint64_t)log_buf, lf_arg, post_pf_req);
+			} else {
+				post_pf_req(lf_arg);
+			}
+			return;
+		} else {
+			while (!log_buf) {
+				log_buf = alloc_settled_log_buf();
+			}
+		}
+	} else {
+		log_buf = lf_arg->log_buf;
+		// Go on
+	}
+
+#endif
 
 	n_blks_read = read_log_from_local_nvm(libfs_id, (uintptr_t)log_buf,
 					      remote_addr, size);
 #ifdef PROFILE_REALTIME_FETCH_LOG_FROM_LOCAL
 	check_rt_bw(&fetch_log_from_local_bw_stat, size);
+#endif
+
+#ifdef REQUEST_MANAGER
+	if (!lf_arg->fsync) {
+		complete_rm_req(rm_handle, (uint64_t)log_buf);
+	}
 #endif
 
 	// # of read == # of requested.
@@ -338,7 +305,6 @@ void fetch_log_from_local_nvm_bg(void *arg)
 		log_fetcher_ready = 1;
 	}
 	mlfs_free(arg);
-#endif
 }
 
 /**

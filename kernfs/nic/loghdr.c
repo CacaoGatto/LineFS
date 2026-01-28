@@ -4,6 +4,7 @@
 #include "storage/storage.h" // nic_slab
 #include "distributed/rpc_interface.h"
 #include "global/util.h"
+#include "limit_rate.h"
 
 threadpool thpool_loghdr_build; // primary.
 threadpool thpool_loghdr_fetch; // replica 1.
@@ -132,6 +133,9 @@ void build_loghdr_list(void *arg)
 
 #ifdef SETTLED_LOG_BUF
 	free_settled_log_buf(bl_arg->log_buf);
+#ifdef REQUEST_MANAGER
+	complete_rm_req(rm_handle, (uint64_t)bl_arg->log_buf);
+#endif
 #endif
 
 	mlfs_assert(cnt == bl_arg->n_loghdrs);

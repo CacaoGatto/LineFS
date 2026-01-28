@@ -22,6 +22,8 @@ struct log_fetch_from_local_nvm_arg {
 	// fsync related.
 	int fsync;
 	uintptr_t fsync_ack_addr;
+	// Request manager related
+	char *log_buf;
 };
 typedef struct log_fetch_from_local_nvm_arg log_fetch_from_local_nvm_arg;
 

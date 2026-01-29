@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stdio.h>
 
-#define SCHEDULER_STRIDE 1024
+#define SCHEDULER_STRIDE 128
 
 static DppScheduler *g_req_managers[8] = {nullptr};
 

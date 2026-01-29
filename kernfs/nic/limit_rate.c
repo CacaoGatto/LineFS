@@ -47,8 +47,8 @@ void init_prefetch_rate_limiter(void)
 	reorder_limit = (uint64_t)available_blk / prefetch_rt_bw.log_prefetch_threshold + 1;
 #ifdef SETTLED_LOG_BUF
 #ifdef REQUEST_MANAGER
-	initialize_req_manager(reorder_limit, 16, reorder_limit / 2, &rm_handle);
-	reorder_limit = 8;
+	initialize_req_manager(reorder_limit, 32, reorder_limit / 2, &rm_handle);
+	reorder_limit = 16;
 #endif
 #ifndef USE_ADV_MEM_POOL
 	n_settled_conf = reorder_limit;

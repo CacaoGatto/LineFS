@@ -1074,7 +1074,7 @@ void init_nic_fs(void)
 		sleep(100000);
 #else
 		schedule_rm_req(rm_handle, 1024);
-		//cpu_relax();
+		cpu_relax();
 #endif
 	}
 	printf("Bye!\n");

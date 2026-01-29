@@ -25,7 +25,6 @@ protected:
         hot_.reserve(hot_cap);
         warm_.reserve(warm_cap);
         cold_.reserve(cold_cap);
-        available_ = hot_cap_;
     }
     ~DppSchedulerCore() {;}
 
@@ -45,18 +44,15 @@ protected:
     }
 
     inline void Commit(uint64_t key) {
-        if (!hash_[key].working) {
+        if (hash_[key].working <= 0) {
             printf("CRITICAL: Commit to a non-working task!\n");
         }
-        hash_[key].job.erase(hash_[key].job.begin());
         hash_[key].credit -= kCreditFactor;
-        hash_[key].working = false;
-        available_ += 1;
+        hash_[key].working -= 1;
         aid_cnt_ += kCreditFactor * 2;
     }
 
     inline int Schedule(uint64_t *key, void **context, void (**callback)(void *)) {
-        if (available_ == 0) return 0;
         if (aid_cnt_ >= init_credit_) {
             aid_cnt_ = 0;
             DemoteWarm();
@@ -65,25 +61,25 @@ protected:
         for (uint64_t i = 0; i < range; i++) {
             uint64_t slot = clock_++ % range;
             uint64_t hot_key = hot_[slot];
-            // Avoid concurrent jobs
-            if (!hash_[hot_key].working) {
-                if (hash_[hot_key].credit <= 0) {
-                    // Try evicting the item to cold set if credit exhausted
-                    EvictHot(slot);
-                    return 0;
-                } else if (hash_[hot_key].job.empty()) {
-                    // Try demoting the item to warm set if no more job to do
-                    DemoteHot(slot);
-                    return 0;
-                }
-                // Got the job to execute
-                hash_[hot_key].working = true;
-                *key = hot_key;
-                *context = hash_[hot_key].job[0].context;
-                *callback = hash_[hot_key].job[0].callback;
-                available_ -= 1;
-                return 1;
+            if (hash_[hot_key].credit <= 0) {
+                // Try evicting the item to cold set if credit exhausted
+                // if (hash_[hot_key].working != 0) continue;
+                EvictHot(slot);
+                return 0;
+            } else if (hash_[hot_key].job.empty()) {
+                // Try demoting the item to warm set if no more job to do
+                // if (hash_[hot_key].working != 0) continue;
+                DemoteHot(slot);
+                return 0;
             }
+            // Got the job to execute
+            hash_[hot_key].working += 1;
+            auto job = hash_[hot_key].job.begin();
+            *key = hot_key;
+            *context = job->context;
+            *callback = job->callback;
+            hash_[hot_key].job.erase(job);
+            return 1;
         }
         return 0;
     }
@@ -101,7 +97,7 @@ private:
         std::vector<JobItem> job{};
         int64_t credit = 0;
         int64_t charge = 0;
-        bool working = false;
+        int32_t working = 0;
         JobContext() {;}
         void Recover() {
             credit += charge;
@@ -126,7 +122,6 @@ private:
     uint64_t cold_ptr_ = 0;
 #endif
 
-    uint64_t available_ = 0;
     uint64_t clock_ = 0;
     int64_t aid_cnt_ = 0;
     static constexpr uint64_t kCreditFactor = 2;
@@ -327,14 +322,14 @@ public:
                  int64_t init_credit, uint64_t req_depth)
             : DppSchedulerCore(hot_size, warm_size, req_depth, init_credit),
               req_queue_(req_depth), req_stack_(req_depth), req_list_(req_depth),
-              task_queue_(hot_size), task_stack_(hot_size), task_list_(hot_size),
-              comp_queue_(hot_size) {
+              task_queue_(req_depth), task_stack_(req_depth), task_list_(req_depth),
+              comp_queue_(req_depth) {
         req_stack_.Initialize();
         task_stack_.Initialize();
         for (uint64_t i = 0; i < req_depth; i++) {
             req_stack_.PushEntry(i);
         }
-        for (uint64_t i = 0; i < hot_size; i++) {
+        for (uint64_t i = 0; i < req_depth; i++) {
             task_stack_.PushEntry(i);
         }
     }
@@ -348,7 +343,7 @@ public:
     inline int Post(uint64_t key, void *context, void (*callback)(void *)) {
         uint64_t req_id = 0;
         if (req_stack_.PopEntry(&req_id)) {
-            return 0;  // Request slot is empty
+            return -1;  // Request slot is empty
         }
         req_list_[req_id].key = key;
         req_list_[req_id].context = context;
@@ -356,7 +351,7 @@ public:
         if (req_queue_.Enqueue(req_id)) {
             return -1;  // Request queue is full
         }
-        return 1;
+        return 0;
     }
 
     // Thread-safe consumer interface

@@ -3,7 +3,8 @@
 
 # basic.
 # export NET_INTERFACE_NAME="enp175s0f1"
-export X86_NET_INTERFACE_NAME='ens10f0np0'
+# ens6f0np0 for BF-3, ens10f0np0 for BF-2
+export X86_NET_INTERFACE_NAME='ens6f0np0'
 export ARM_NET_INTERFACE_NAME='enp3s0f0s0'
 export PORT_NUM='12345'
 export LOW_LATENCY_PORT_NUM='12346'
@@ -42,6 +43,7 @@ export THREAD_NUM_REP=8
 export THREAD_NUM_DIGEST_RDMA_MEMCPY=1
 # host kernfs. max=8
 export THREAD_NUM_DIGEST_HOST_MEMCPY=8
+# 3 or 4 for BF-3, 1 for BF-2
 export THREAD_NUM_LOG_PREFETCH=4 # From local NVM to NICFS in Primary.
 export THREAD_NUM_LOG_PREFETCH_REQ=1 # libfs.
 export THREAD_NUM_PREPARE_LOGHDRS=8
@@ -60,6 +62,7 @@ export THREAD_NUM_END_PIPELINE=2
 # Parameters.
 export REQUEST_RATE_LIMIT_THRESHOLD=500
 # export PREFETCH_DATA_CAP=2	# Prefetch data cap in MB.
+# 6000 for BF-3, 3500 for BF-2
 export PREFETCH_DATA_CAP=6000	# Prefetch data cap in KB. For better control.
 
 # For experiment
